@@ -1,0 +1,17 @@
+[
+  {
+    "id": "81bb7d0b-9f10-435f-ae92-5f7f451eae04",
+    "nurse_id": "N005",
+    "request_type": "pto",
+    "dates": [
+      "2026-05-28"
+    ],
+    "shift_slot": null,
+    "status": "approved",
+    "submitted_at": "2026-05-14T17:15:58.614916",
+    "decided_at": "2026-05-14T17:15:58.620320",
+    "decision_reason": "PTO request approved: 1 day(s). Charging 12 hrs PTO.",
+    "pto_hours_to_use": 0.0,
+    "education_activity": ""
+  }
+]
