@@ -81,6 +81,219 @@ def _build_custom_needs(
     )
 
 
+def _check_request_eligibility(
+    req, nurse, all_requests: list, all_nurses: list
+) -> tuple[list[str], list[str], list[str]]:
+    """
+    Returns (blocks, warnings, info).
+    blocks  = hard policy violations that prevent approval
+    warnings = soft concerns the manager should weigh
+    info    = neutral context (balance, seniority, etc.)
+    """
+    from nursing_agent.policy_engine import (
+        check_vacation_eligibility, validate_a_day_request,
+        pto_days_per_vacation_week,
+    )
+    blocks, warnings, info = [], [], []
+
+    hrs_per_day = 12.0 if nurse.shift_type.value == "12hr" else 8.0
+    days_requested = len(req.dates)
+    hours_needed = hrs_per_day * days_requested
+
+    req_dates_set = {d if isinstance(d, date) else date.fromisoformat(str(d)) for d in req.dates}
+
+    # ── Conflict: same nurse already has approved time-off on any of these dates ──
+    same_nurse_approved = [
+        r for r in all_requests
+        if r.nurse_id == nurse.id and r.id != req.id and r.status.value == "approved"
+    ]
+    conflict_dates = []
+    for r in same_nurse_approved:
+        overlap = req_dates_set & {d if isinstance(d, date) else date.fromisoformat(str(d)) for d in r.dates}
+        if overlap:
+            conflict_dates += sorted(overlap)
+    if conflict_dates:
+        blocks.append(f"Already has approved time-off on: {', '.join(str(d) for d in conflict_dates)}")
+
+    # ── Seniority context vs other nurses approved on same dates ──────────────
+    others_same_dates = []
+    for r in all_requests:
+        if r.nurse_id == nurse.id or r.status.value != "approved":
+            continue
+        overlap = req_dates_set & {d if isinstance(d, date) else date.fromisoformat(str(d)) for d in r.dates}
+        if overlap:
+            other = next((n for n in all_nurses if n.id == r.nurse_id), None)
+            if other:
+                others_same_dates.append(other)
+
+    sorted_nurses = sorted(all_nurses, key=lambda n: n.seniority_years, reverse=True)
+    seniority_rank = next((i + 1 for i, n in enumerate(sorted_nurses) if n.id == nurse.id), len(all_nurses))
+    info.append(f"Seniority rank #{seniority_rank} of {len(all_nurses)} ({nurse.seniority_years:.1f} yrs)")
+
+    if others_same_dates:
+        seniors = [n.name for n in others_same_dates if n.seniority_years > nurse.seniority_years]
+        juniors = [n.name for n in others_same_dates if n.seniority_years <= nurse.seniority_years]
+        if seniors:
+            warnings.append(f"More-senior nurses already approved on overlapping dates: {', '.join(seniors)}")
+        if juniors:
+            info.append(f"Less-senior nurses already approved on same dates: {', '.join(juniors)}")
+
+    # ── Request-type specific checks ───────────────────────────────────────────
+    rtype = req.request_type.value
+
+    if rtype == "pto":
+        if nurse.pto_hours_balance < hours_needed:
+            blocks.append(
+                f"Insufficient PTO balance: needs {hours_needed:.0f} hrs, "
+                f"has {nurse.pto_hours_balance:.0f} hrs"
+            )
+        else:
+            remaining = nurse.pto_hours_balance - hours_needed
+            info.append(
+                f"PTO balance: {nurse.pto_hours_balance:.0f} hrs → "
+                f"{remaining:.0f} hrs remaining after approval"
+            )
+
+    elif rtype == "pre_approved_vacation":
+        days_per_week = pto_days_per_vacation_week(nurse)
+        weeks_requested = max(1, round(days_requested / days_per_week))
+        weeks_remaining = nurse.max_pre_approved_vacation_weeks - nurse.pre_approved_vacation_weeks_used
+        summer_months = {6, 7, 8, 9}
+        is_summer = any(
+            (d if isinstance(d, date) else date.fromisoformat(str(d))).month in summer_months
+            for d in req.dates
+        )
+        # Count existing approved summer vacation weeks for this nurse
+        summer_weeks_used = 0
+        for r in same_nurse_approved:
+            if r.request_type.value == "pre_approved_vacation":
+                summer_weeks_used += sum(
+                    1 for d in r.dates
+                    if (d if isinstance(d, date) else date.fromisoformat(str(d))).month in summer_months
+                ) // days_per_week
+
+        eligible_vac, vac_reason = check_vacation_eligibility(
+            nurse, weeks_requested,
+            [d if isinstance(d, date) else date.fromisoformat(str(d)) for d in req.dates],
+            is_summer, summer_weeks_used,
+        )
+        if not eligible_vac:
+            blocks.append(vac_reason)
+        else:
+            info.append(
+                f"Vacation allotment: {nurse.pre_approved_vacation_weeks_used}/"
+                f"{nurse.max_pre_approved_vacation_weeks} wks used → "
+                f"{weeks_remaining} wk(s) remaining"
+            )
+
+        pto_needed = days_per_week * weeks_requested * hrs_per_day
+        if nurse.pto_hours_balance < pto_needed:
+            warnings.append(
+                f"Low PTO balance for vacation pay: needs ~{pto_needed:.0f} hrs, "
+                f"has {nurse.pto_hours_balance:.0f} hrs"
+            )
+        else:
+            info.append(f"PTO for vacation pay: ~{pto_needed:.0f} hrs needed, {nurse.pto_hours_balance:.0f} hrs available")
+
+        if is_summer:
+            info.append(f"Summer period request — current summer weeks used: {summer_weeks_used}")
+
+    elif rtype == "pre_approved_education":
+        edu_remaining = nurse.max_pre_approved_education_hours - nurse.pre_approved_education_hours_used
+        if edu_remaining <= 0:
+            blocks.append(
+                f"No education hours remaining "
+                f"({nurse.pre_approved_education_hours_used:.0f}/"
+                f"{nurse.max_pre_approved_education_hours:.0f} hrs used this year)"
+            )
+        elif hours_needed > edu_remaining:
+            blocks.append(
+                f"Insufficient education hours: needs {hours_needed:.0f} hrs, "
+                f"only {edu_remaining:.0f} hrs remaining"
+            )
+        else:
+            info.append(
+                f"Education hours: {nurse.pre_approved_education_hours_used:.0f}/"
+                f"{nurse.max_pre_approved_education_hours:.0f} hrs used → "
+                f"{edu_remaining:.0f} hrs remaining after approval"
+            )
+        if req.education_activity:
+            info.append(f"Activity: {req.education_activity}")
+
+    elif rtype == "a_day":
+        req_date = req.dates[0] if req.dates else date.today()
+        req_date = req_date if isinstance(req_date, date) else date.fromisoformat(str(req_date))
+        days_ahead = (req_date - date.today()).days
+
+        if days_ahead > 28:
+            blocks.append(f"Submitted too far in advance: {days_ahead} days (max 28 days / 4 weeks)")
+        elif days_ahead < 0:
+            blocks.append("Requested date is in the past")
+
+        if nurse.a_days_this_pay_period >= 2:
+            blocks.append(
+                f"A-day limit reached this pay period "
+                f"({nurse.a_days_this_pay_period}/2 used)"
+            )
+        else:
+            info.append(f"A-days this pay period: {nurse.a_days_this_pay_period}/2 used")
+
+        # Equity: others without an A-day this PP have priority
+        others_no_aday = [
+            n for n in all_nurses
+            if n.id != nurse.id and n.a_days_this_pay_period == 0
+        ]
+        if nurse.a_days_this_pay_period > 0 and others_no_aday:
+            warnings.append(
+                f"{len(others_no_aday)} colleague(s) have not yet had an A-day "
+                "this pay period and have priority per CRONA §III.D.6"
+            )
+
+    return blocks, warnings, info
+
+
+def _check_swap_eligibility(
+    swap, all_nurses: list, all_requests: list
+) -> tuple[list[str], list[str], list[str]]:
+    from nursing_agent.policy_engine import validate_shift_swap
+    blocks, warnings, info = [], [], []
+
+    req_nurse = next((n for n in all_nurses if n.id == swap.requesting_nurse_id), None)
+    acc_nurse = next((n for n in all_nurses if n.id == swap.accepting_nurse_id), None)
+
+    if not req_nurse or not acc_nurse:
+        blocks.append("One or both nurses not found in roster")
+        return blocks, warnings, info
+
+    trade_date = swap.trade_date if isinstance(swap.trade_date, date) else date.fromisoformat(str(swap.trade_date))
+
+    # Lead-time check via policy engine
+    valid, reason = validate_shift_swap(swap, req_nurse, acc_nurse, date.today())
+    if not valid:
+        blocks.append(reason)
+    else:
+        days_until = (trade_date - date.today()).days
+        info.append(f"Lead time: {days_until} days ✓ (minimum 3 required per Scheduling Policy §II.B.2.b)")
+
+    # Check both nurses for approved time-off on trade date
+    for nurse in (req_nurse, acc_nurse):
+        conflict = [
+            r for r in all_requests
+            if r.nurse_id == nurse.id and r.status.value == "approved"
+            and trade_date in {d if isinstance(d, date) else date.fromisoformat(str(d)) for d in r.dates}
+        ]
+        if conflict:
+            blocks.append(f"{nurse.name} has approved time-off on {trade_date}")
+
+    # Seniority info for both nurses
+    sorted_nurses = sorted(all_nurses, key=lambda n: n.seniority_years, reverse=True)
+    for nurse in (req_nurse, acc_nurse):
+        rank = next((i + 1 for i, n in enumerate(sorted_nurses) if n.id == nurse.id), "?")
+        info.append(f"{nurse.name}: seniority rank #{rank} ({nurse.seniority_years:.1f} yrs), FTE {nurse.fte}")
+
+    return blocks, warnings, info
+
+
 def _icu_needs_to_department_needs(icu_needs: ICUOperationalNeeds) -> DepartmentNeedsInput:
     import math
     reqs = []
@@ -502,24 +715,48 @@ with tab_requests:
         else:
             st.caption(f"{len(pending_tor)} time-off · {len(pending_swaps)} swap requests pending")
 
+        all_nurses_list = storage.load_nurses()
+        all_tor_list = storage.load_time_off_requests()
+
         for r in sorted(pending_tor, key=lambda x: x.submitted_at, reverse=True):
             date_str = (
                 f"{min(r.dates)} – {max(r.dates)}" if len(r.dates) > 1 else str(r.dates[0])
             )
+            nurse_obj = next((n for n in all_nurses_list if n.id == r.nurse_id), None)
+            blocks, warnings_list, info_list = (
+                _check_request_eligibility(r, nurse_obj, all_tor_list, all_nurses_list)
+                if nurse_obj else (["Nurse not found in roster"], [], [])
+            )
+            eligible = len(blocks) == 0
+            badge = "✅ Eligible" if eligible else ("⚠️ Conditional" if not blocks else "❌ Blocked")
+            badge_color = "green" if eligible else ("orange" if warnings_list and not blocks else "red")
+
             label = f"🟡 {nmap.get(r.nurse_id, r.nurse_id)} — {r.request_type.value.replace('_',' ').title()} — {date_str}"
             with st.expander(label, expanded=True):
-                st.write(f"**Nurse:** {nmap.get(r.nurse_id, r.nurse_id)}")
-                st.write(f"**Type:** {r.request_type.value.replace('_',' ').title()}")
-                st.write(f"**Date(s):** {date_str}")
+                st.write(f"**Nurse:** {nmap.get(r.nurse_id, r.nurse_id)}  |  **Type:** {r.request_type.value.replace('_',' ').title()}  |  **Date(s):** {date_str}")
                 if r.education_activity:
                     st.write(f"**Activity:** {r.education_activity}")
                 st.write(f"**Submitted:** {r.submitted_at.strftime('%Y-%m-%d %H:%M')}")
+
+                st.markdown(f"**Eligibility: :{badge_color}[{badge}]**")
+
+                if blocks:
+                    for b in blocks:
+                        st.error(f"🚫 {b}")
+                if warnings_list:
+                    for w in warnings_list:
+                        st.warning(f"⚠️ {w}")
+                if info_list:
+                    with st.expander("Details", expanded=not blocks):
+                        for item in info_list:
+                            st.markdown(f"- {item}")
 
                 mgr_note = st.text_input(
                     "Manager note (optional)", key=f"note_{r.id}", placeholder="Reason for decision…"
                 )
                 col_a, col_d = st.columns(2)
-                if col_a.button("✅ Approve", key=f"approve_{r.id}", use_container_width=True):
+                if col_a.button("✅ Approve", key=f"approve_{r.id}", use_container_width=True,
+                                type="primary" if eligible else "secondary"):
                     r.status = RequestStatus.APPROVED
                     r.decided_at = datetime.now()
                     r.decision_reason = mgr_note or "Approved by manager."
@@ -537,22 +774,38 @@ with tab_requests:
         for s in sorted(pending_swaps, key=lambda x: x.submitted_at, reverse=True):
             req_name = nmap.get(s.requesting_nurse_id, s.requesting_nurse_id)
             acc_name = nmap.get(s.accepting_nurse_id, s.accepting_nurse_id) if s.accepting_nurse_id else "TBD"
+            s_blocks, s_warnings, s_info = _check_swap_eligibility(s, all_nurses_list, all_tor_list)
+            s_eligible = len(s_blocks) == 0
+            s_badge = "✅ Eligible" if s_eligible else "❌ Blocked"
+            s_color = "green" if s_eligible else "red"
+
             label = f"🟡 Swap — {req_name} ↔ {acc_name} — {s.trade_date}"
             with st.expander(label, expanded=True):
-                st.write(f"**Requesting:** {req_name}")
-                st.write(f"**Accepting:** {acc_name}")
-                st.write(f"**Trade date:** {s.trade_date}")
-                st.write(f"**Shift A:** {s.original_shift_id}")
-                st.write(f"**Shift B:** {s.swap_shift_id}")
+                st.write(f"**Requesting:** {req_name}  |  **Accepting:** {acc_name}  |  **Trade date:** {s.trade_date}")
+                st.write(f"**Shift A:** {s.original_shift_id}  |  **Shift B:** {s.swap_shift_id}")
                 if s.notes:
                     st.write(f"**Notes:** {s.notes}")
                 st.write(f"**Submitted:** {s.submitted_at.strftime('%Y-%m-%d %H:%M')}")
+
+                st.markdown(f"**Eligibility: :{s_color}[{s_badge}]**")
+
+                if s_blocks:
+                    for b in s_blocks:
+                        st.error(f"🚫 {b}")
+                if s_warnings:
+                    for w in s_warnings:
+                        st.warning(f"⚠️ {w}")
+                if s_info:
+                    with st.expander("Details", expanded=not s_blocks):
+                        for item in s_info:
+                            st.markdown(f"- {item}")
 
                 swap_note = st.text_input(
                     "Manager note (optional)", key=f"swap_note_{s.id}", placeholder="Reason for decision…"
                 )
                 col_a, col_d = st.columns(2)
-                if col_a.button("✅ Approve", key=f"swap_approve_{s.id}", use_container_width=True):
+                if col_a.button("✅ Approve", key=f"swap_approve_{s.id}", use_container_width=True,
+                                type="primary" if s_eligible else "secondary"):
                     s.status = RequestStatus.APPROVED
                     s.manager_approved = True
                     storage.save_swap_request(s)
