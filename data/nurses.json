@@ -10,11 +10,21 @@
     "designated_weekend": "sat_sun",
     "hire_date": "2015-03-10",
     "adjusted_hire_date": null,
-    "specialties": ["oncology", "telemetry"],
-    "float_regions": ["K5", "K6", "K7"],
+    "specialties": [
+      "oncology",
+      "telemetry"
+    ],
+    "float_regions": [
+      "K5",
+      "K6",
+      "K7"
+    ],
     "can_charge": true,
     "can_resource": false,
-    "cross_trained_units": ["K5", "K6"],
+    "cross_trained_units": [
+      "K5",
+      "K6"
+    ],
     "pto_hours_balance": 120.0,
     "education_hours_balance": 40.0,
     "pre_approved_vacation_weeks_used": 0,
@@ -41,11 +51,23 @@
     "designated_weekend": "sat_sun",
     "hire_date": "2010-06-15",
     "adjusted_hire_date": null,
-    "specialties": ["oncology", "critical_care"],
-    "float_regions": ["K5", "K6", "K7", "M5"],
+    "specialties": [
+      "oncology",
+      "critical_care"
+    ],
+    "float_regions": [
+      "K5",
+      "K6",
+      "K7",
+      "M5"
+    ],
     "can_charge": true,
     "can_resource": true,
-    "cross_trained_units": ["K5", "K6", "K7"],
+    "cross_trained_units": [
+      "K5",
+      "K6",
+      "K7"
+    ],
     "pto_hours_balance": 200.0,
     "education_hours_balance": 40.0,
     "pre_approved_vacation_weeks_used": 1,
@@ -72,11 +94,18 @@
     "designated_weekend": "fri_sat",
     "hire_date": "2019-01-22",
     "adjusted_hire_date": null,
-    "specialties": ["telemetry"],
-    "float_regions": ["K5", "K7"],
+    "specialties": [
+      "telemetry"
+    ],
+    "float_regions": [
+      "K5",
+      "K7"
+    ],
     "can_charge": false,
     "can_resource": false,
-    "cross_trained_units": ["K5"],
+    "cross_trained_units": [
+      "K5"
+    ],
     "pto_hours_balance": 96.0,
     "education_hours_balance": 32.0,
     "pre_approved_vacation_weeks_used": 0,
@@ -103,11 +132,18 @@
     "designated_weekend": "sat_sun",
     "hire_date": "2017-08-05",
     "adjusted_hire_date": null,
-    "specialties": ["med_surg"],
-    "float_regions": ["K5", "K6"],
+    "specialties": [
+      "med_surg"
+    ],
+    "float_regions": [
+      "K5",
+      "K6"
+    ],
     "can_charge": false,
     "can_resource": false,
-    "cross_trained_units": ["K5"],
+    "cross_trained_units": [
+      "K5"
+    ],
     "pto_hours_balance": 80.0,
     "education_hours_balance": 40.0,
     "pre_approved_vacation_weeks_used": 0,
@@ -134,11 +170,25 @@
     "designated_weekend": "sat_sun",
     "hire_date": "2005-11-12",
     "adjusted_hire_date": null,
-    "specialties": ["oncology", "telemetry", "critical_care"],
-    "float_regions": ["K5", "K6", "K7", "M5", "M6"],
+    "specialties": [
+      "oncology",
+      "telemetry",
+      "critical_care"
+    ],
+    "float_regions": [
+      "K5",
+      "K6",
+      "K7",
+      "M5",
+      "M6"
+    ],
     "can_charge": true,
     "can_resource": true,
-    "cross_trained_units": ["K5", "K6", "K7"],
+    "cross_trained_units": [
+      "K5",
+      "K6",
+      "K7"
+    ],
     "pto_hours_balance": 240.0,
     "education_hours_balance": 40.0,
     "pre_approved_vacation_weeks_used": 2,
@@ -165,8 +215,14 @@
     "designated_weekend": "sat_sun",
     "hire_date": "2022-05-01",
     "adjusted_hire_date": null,
-    "specialties": ["med_surg"],
-    "float_regions": ["K5", "K6", "K7"],
+    "specialties": [
+      "med_surg"
+    ],
+    "float_regions": [
+      "K5",
+      "K6",
+      "K7"
+    ],
     "can_charge": false,
     "can_resource": false,
     "cross_trained_units": [],
@@ -196,11 +252,19 @@
     "designated_weekend": "sat_sun",
     "hire_date": "2020-09-14",
     "adjusted_hire_date": null,
-    "specialties": ["telemetry", "med_surg"],
-    "float_regions": ["K5", "K6"],
+    "specialties": [
+      "telemetry",
+      "med_surg"
+    ],
+    "float_regions": [
+      "K5",
+      "K6"
+    ],
     "can_charge": false,
     "can_resource": false,
-    "cross_trained_units": ["K5"],
+    "cross_trained_units": [
+      "K5"
+    ],
     "pto_hours_balance": 64.0,
     "education_hours_balance": 24.0,
     "pre_approved_vacation_weeks_used": 1,
@@ -227,11 +291,19 @@
     "designated_weekend": "sat_sun",
     "hire_date": "2013-04-20",
     "adjusted_hire_date": null,
-    "specialties": ["oncology"],
-    "float_regions": ["K5", "K7"],
+    "specialties": [
+      "oncology"
+    ],
+    "float_regions": [
+      "K5",
+      "K7"
+    ],
     "can_charge": true,
     "can_resource": false,
-    "cross_trained_units": ["K5", "K7"],
+    "cross_trained_units": [
+      "K5",
+      "K7"
+    ],
     "pto_hours_balance": 160.0,
     "education_hours_balance": 40.0,
     "pre_approved_vacation_weeks_used": 0,
@@ -258,8 +330,14 @@
     "designated_weekend": "sat_sun",
     "hire_date": "2026-02-01",
     "adjusted_hire_date": null,
-    "specialties": ["med_surg", "telemetry"],
-    "float_regions": ["K5", "K6"],
+    "specialties": [
+      "med_surg",
+      "telemetry"
+    ],
+    "float_regions": [
+      "K5",
+      "K6"
+    ],
     "can_charge": false,
     "can_resource": false,
     "cross_trained_units": [],
@@ -289,11 +367,19 @@
     "designated_weekend": "fri_sun",
     "hire_date": "2021-03-08",
     "adjusted_hire_date": null,
-    "specialties": ["telemetry"],
-    "float_regions": ["K5", "K6", "K7"],
+    "specialties": [
+      "telemetry"
+    ],
+    "float_regions": [
+      "K5",
+      "K6",
+      "K7"
+    ],
     "can_charge": false,
     "can_resource": false,
-    "cross_trained_units": ["K5"],
+    "cross_trained_units": [
+      "K5"
+    ],
     "pto_hours_balance": 72.0,
     "education_hours_balance": 32.0,
     "pre_approved_vacation_weeks_used": 0,
@@ -308,5 +394,548 @@
     "total_shifts_picked_up": 1,
     "total_swaps_completed": 2,
     "current_streak_days": 2
+  },
+  {
+    "id": "N011",
+    "name": "Kevin Schulman",
+    "employee_type": "regular",
+    "role": "charge",
+    "fte": 1.0,
+    "shift_type": "12hr",
+    "shift_slot": "day",
+    "designated_weekend": "sat_sun",
+    "hire_date": "2014-03-15",
+    "adjusted_hire_date": null,
+    "specialties": [
+      "critical_care",
+      "telemetry"
+    ],
+    "float_regions": [
+      "K5",
+      "K6"
+    ],
+    "can_charge": true,
+    "can_resource": true,
+    "cross_trained_units": [
+      "K5"
+    ],
+    "pto_hours_balance": 180.0,
+    "education_hours_balance": 40.0,
+    "pre_approved_vacation_weeks_used": 0,
+    "pre_approved_education_hours_used": 0.0,
+    "a_days_this_pay_period": 0,
+    "cancelled_hours_this_pay_period": 0.0,
+    "last_float_date": null,
+    "float_count_this_schedule": 0,
+    "gamification_points": 0,
+    "total_no_call_outs": 0,
+    "total_on_time": 0,
+    "total_shifts_picked_up": 0,
+    "total_swaps_completed": 0,
+    "current_streak_days": 0
+  },
+  {
+    "id": "N012",
+    "name": "David Sheinker",
+    "employee_type": "regular",
+    "role": "rn",
+    "fte": 1.0,
+    "shift_type": "12hr",
+    "shift_slot": "day",
+    "designated_weekend": "sat_sun",
+    "hire_date": "2019-05-10",
+    "adjusted_hire_date": null,
+    "specialties": [
+      "oncology",
+      "telemetry"
+    ],
+    "float_regions": [
+      "K5",
+      "K6"
+    ],
+    "can_charge": true,
+    "can_resource": false,
+    "cross_trained_units": [
+      "K5"
+    ],
+    "pto_hours_balance": 120.0,
+    "education_hours_balance": 40.0,
+    "pre_approved_vacation_weeks_used": 0,
+    "pre_approved_education_hours_used": 0.0,
+    "a_days_this_pay_period": 0,
+    "cancelled_hours_this_pay_period": 0.0,
+    "last_float_date": null,
+    "float_count_this_schedule": 0,
+    "gamification_points": 0,
+    "total_no_call_outs": 0,
+    "total_on_time": 0,
+    "total_shifts_picked_up": 0,
+    "total_swaps_completed": 0,
+    "current_streak_days": 0
+  },
+  {
+    "id": "N013",
+    "name": "Nigam Shah",
+    "employee_type": "regular",
+    "role": "rn",
+    "fte": 0.9,
+    "shift_type": "12hr",
+    "shift_slot": "evening",
+    "designated_weekend": "sat_sun",
+    "hire_date": "2020-02-18",
+    "adjusted_hire_date": null,
+    "specialties": [
+      "telemetry",
+      "med_surg"
+    ],
+    "float_regions": [
+      "K5",
+      "K6"
+    ],
+    "can_charge": true,
+    "can_resource": false,
+    "cross_trained_units": [
+      "K5"
+    ],
+    "pto_hours_balance": 108.0,
+    "education_hours_balance": 40.0,
+    "pre_approved_vacation_weeks_used": 0,
+    "pre_approved_education_hours_used": 0.0,
+    "a_days_this_pay_period": 0,
+    "cancelled_hours_this_pay_period": 0.0,
+    "last_float_date": null,
+    "float_count_this_schedule": 0,
+    "gamification_points": 0,
+    "total_no_call_outs": 0,
+    "total_on_time": 0,
+    "total_shifts_picked_up": 0,
+    "total_swaps_completed": 0,
+    "current_streak_days": 0
+  },
+  {
+    "id": "N014",
+    "name": "Kavita Patel",
+    "employee_type": "regular",
+    "role": "rn",
+    "fte": 0.9,
+    "shift_type": "12hr",
+    "shift_slot": "day",
+    "designated_weekend": "sat_sun",
+    "hire_date": "2023-02-20",
+    "adjusted_hire_date": null,
+    "specialties": [
+      "med_surg"
+    ],
+    "float_regions": [
+      "K5",
+      "K6"
+    ],
+    "can_charge": false,
+    "can_resource": false,
+    "cross_trained_units": [
+      "K5"
+    ],
+    "pto_hours_balance": 64.0,
+    "education_hours_balance": 40.0,
+    "pre_approved_vacation_weeks_used": 0,
+    "pre_approved_education_hours_used": 0.0,
+    "a_days_this_pay_period": 0,
+    "cancelled_hours_this_pay_period": 0.0,
+    "last_float_date": null,
+    "float_count_this_schedule": 0,
+    "gamification_points": 0,
+    "total_no_call_outs": 0,
+    "total_on_time": 0,
+    "total_shifts_picked_up": 0,
+    "total_swaps_completed": 0,
+    "current_streak_days": 0
+  },
+  {
+    "id": "N015",
+    "name": "Meagan Moyer",
+    "employee_type": "regular",
+    "role": "rn",
+    "fte": 1.0,
+    "shift_type": "12hr",
+    "shift_slot": "day",
+    "designated_weekend": "sat_sun",
+    "hire_date": "2018-11-05",
+    "adjusted_hire_date": null,
+    "specialties": [
+      "oncology",
+      "critical_care"
+    ],
+    "float_regions": [
+      "K5",
+      "K6"
+    ],
+    "can_charge": true,
+    "can_resource": false,
+    "cross_trained_units": [
+      "K5"
+    ],
+    "pto_hours_balance": 132.0,
+    "education_hours_balance": 40.0,
+    "pre_approved_vacation_weeks_used": 0,
+    "pre_approved_education_hours_used": 0.0,
+    "a_days_this_pay_period": 0,
+    "cancelled_hours_this_pay_period": 0.0,
+    "last_float_date": null,
+    "float_count_this_schedule": 0,
+    "gamification_points": 0,
+    "total_no_call_outs": 0,
+    "total_on_time": 0,
+    "total_shifts_picked_up": 0,
+    "total_swaps_completed": 0,
+    "current_streak_days": 0
+  },
+  {
+    "id": "N016",
+    "name": "Mark Musen",
+    "employee_type": "regular",
+    "role": "rn",
+    "fte": 1.0,
+    "shift_type": "12hr",
+    "shift_slot": "night_12",
+    "designated_weekend": "sat_sun",
+    "hire_date": "2022-08-15",
+    "adjusted_hire_date": null,
+    "specialties": [
+      "telemetry"
+    ],
+    "float_regions": [
+      "K5",
+      "K6"
+    ],
+    "can_charge": false,
+    "can_resource": false,
+    "cross_trained_units": [
+      "K5"
+    ],
+    "pto_hours_balance": 72.0,
+    "education_hours_balance": 40.0,
+    "pre_approved_vacation_weeks_used": 0,
+    "pre_approved_education_hours_used": 0.0,
+    "a_days_this_pay_period": 0,
+    "cancelled_hours_this_pay_period": 0.0,
+    "last_float_date": null,
+    "float_count_this_schedule": 0,
+    "gamification_points": 0,
+    "total_no_call_outs": 0,
+    "total_on_time": 0,
+    "total_shifts_picked_up": 0,
+    "total_swaps_completed": 0,
+    "current_streak_days": 0
+  },
+  {
+    "id": "N017",
+    "name": "Regina Nuzzo",
+    "employee_type": "regular",
+    "role": "charge",
+    "fte": 1.0,
+    "shift_type": "12hr",
+    "shift_slot": "day",
+    "designated_weekend": "sat_sun",
+    "hire_date": "2016-07-22",
+    "adjusted_hire_date": null,
+    "specialties": [
+      "critical_care",
+      "oncology",
+      "telemetry"
+    ],
+    "float_regions": [
+      "K5",
+      "K6"
+    ],
+    "can_charge": true,
+    "can_resource": true,
+    "cross_trained_units": [
+      "K5"
+    ],
+    "pto_hours_balance": 160.0,
+    "education_hours_balance": 40.0,
+    "pre_approved_vacation_weeks_used": 0,
+    "pre_approved_education_hours_used": 0.0,
+    "a_days_this_pay_period": 0,
+    "cancelled_hours_this_pay_period": 0.0,
+    "last_float_date": null,
+    "float_count_this_schedule": 0,
+    "gamification_points": 0,
+    "total_no_call_outs": 0,
+    "total_on_time": 0,
+    "total_shifts_picked_up": 0,
+    "total_swaps_completed": 0,
+    "current_streak_days": 0
+  },
+  {
+    "id": "N018",
+    "name": "Jonathan Levav",
+    "employee_type": "regular",
+    "role": "rn",
+    "fte": 0.8,
+    "shift_type": "12hr",
+    "shift_slot": "evening",
+    "designated_weekend": "sat_sun",
+    "hire_date": "2024-01-08",
+    "adjusted_hire_date": null,
+    "specialties": [
+      "med_surg"
+    ],
+    "float_regions": [
+      "K5",
+      "K6"
+    ],
+    "can_charge": false,
+    "can_resource": false,
+    "cross_trained_units": [
+      "K5"
+    ],
+    "pto_hours_balance": 48.0,
+    "education_hours_balance": 40.0,
+    "pre_approved_vacation_weeks_used": 0,
+    "pre_approved_education_hours_used": 0.0,
+    "a_days_this_pay_period": 0,
+    "cancelled_hours_this_pay_period": 0.0,
+    "last_float_date": null,
+    "float_count_this_schedule": 0,
+    "gamification_points": 0,
+    "total_no_call_outs": 0,
+    "total_on_time": 0,
+    "total_shifts_picked_up": 0,
+    "total_swaps_completed": 0,
+    "current_streak_days": 0
+  },
+  {
+    "id": "N019",
+    "name": "David Magnus",
+    "employee_type": "regular",
+    "role": "rn",
+    "fte": 0.9,
+    "shift_type": "12hr",
+    "shift_slot": "night_12",
+    "designated_weekend": "sat_sun",
+    "hire_date": "2021-08-30",
+    "adjusted_hire_date": null,
+    "specialties": [
+      "critical_care",
+      "telemetry"
+    ],
+    "float_regions": [
+      "K5",
+      "K6"
+    ],
+    "can_charge": true,
+    "can_resource": false,
+    "cross_trained_units": [
+      "K5"
+    ],
+    "pto_hours_balance": 96.0,
+    "education_hours_balance": 40.0,
+    "pre_approved_vacation_weeks_used": 0,
+    "pre_approved_education_hours_used": 0.0,
+    "a_days_this_pay_period": 0,
+    "cancelled_hours_this_pay_period": 0.0,
+    "last_float_date": null,
+    "float_count_this_schedule": 0,
+    "gamification_points": 0,
+    "total_no_call_outs": 0,
+    "total_on_time": 0,
+    "total_shifts_picked_up": 0,
+    "total_swaps_completed": 0,
+    "current_streak_days": 0
+  },
+  {
+    "id": "N020",
+    "name": "Pedram Mokrian",
+    "employee_type": "regular",
+    "role": "rn",
+    "fte": 1.0,
+    "shift_type": "12hr",
+    "shift_slot": "day",
+    "designated_weekend": "sat_sun",
+    "hire_date": "2019-04-12",
+    "adjusted_hire_date": null,
+    "specialties": [
+      "oncology",
+      "med_surg"
+    ],
+    "float_regions": [
+      "K5",
+      "K6"
+    ],
+    "can_charge": true,
+    "can_resource": false,
+    "cross_trained_units": [
+      "K5"
+    ],
+    "pto_hours_balance": 128.0,
+    "education_hours_balance": 40.0,
+    "pre_approved_vacation_weeks_used": 0,
+    "pre_approved_education_hours_used": 0.0,
+    "a_days_this_pay_period": 0,
+    "cancelled_hours_this_pay_period": 0.0,
+    "last_float_date": null,
+    "float_count_this_schedule": 0,
+    "gamification_points": 0,
+    "total_no_call_outs": 0,
+    "total_on_time": 0,
+    "total_shifts_picked_up": 0,
+    "total_swaps_completed": 0,
+    "current_streak_days": 0
+  },
+  {
+    "id": "N021",
+    "name": "Kate Rosenbluth",
+    "employee_type": "regular",
+    "role": "rn",
+    "fte": 0.9,
+    "shift_type": "12hr",
+    "shift_slot": "day",
+    "designated_weekend": "sat_sun",
+    "hire_date": "2023-07-17",
+    "adjusted_hire_date": null,
+    "specialties": [
+      "med_surg"
+    ],
+    "float_regions": [
+      "K5",
+      "K6"
+    ],
+    "can_charge": false,
+    "can_resource": false,
+    "cross_trained_units": [
+      "K5"
+    ],
+    "pto_hours_balance": 60.0,
+    "education_hours_balance": 40.0,
+    "pre_approved_vacation_weeks_used": 0,
+    "pre_approved_education_hours_used": 0.0,
+    "a_days_this_pay_period": 0,
+    "cancelled_hours_this_pay_period": 0.0,
+    "last_float_date": null,
+    "float_count_this_schedule": 0,
+    "gamification_points": 0,
+    "total_no_call_outs": 0,
+    "total_on_time": 0,
+    "total_shifts_picked_up": 0,
+    "total_swaps_completed": 0,
+    "current_streak_days": 0
+  },
+  {
+    "id": "N022",
+    "name": "Kristin Sainani",
+    "employee_type": "regular",
+    "role": "rn",
+    "fte": 0.8,
+    "shift_type": "12hr",
+    "shift_slot": "evening",
+    "designated_weekend": "sat_sun",
+    "hire_date": "2022-01-10",
+    "adjusted_hire_date": null,
+    "specialties": [
+      "telemetry",
+      "oncology"
+    ],
+    "float_regions": [
+      "K5",
+      "K6"
+    ],
+    "can_charge": true,
+    "can_resource": false,
+    "cross_trained_units": [
+      "K5"
+    ],
+    "pto_hours_balance": 80.0,
+    "education_hours_balance": 40.0,
+    "pre_approved_vacation_weeks_used": 0,
+    "pre_approved_education_hours_used": 0.0,
+    "a_days_this_pay_period": 0,
+    "cancelled_hours_this_pay_period": 0.0,
+    "last_float_date": null,
+    "float_count_this_schedule": 0,
+    "gamification_points": 0,
+    "total_no_call_outs": 0,
+    "total_on_time": 0,
+    "total_shifts_picked_up": 0,
+    "total_swaps_completed": 0,
+    "current_streak_days": 0
+  },
+  {
+    "id": "N023",
+    "name": "Francis Flynn",
+    "employee_type": "regular",
+    "role": "rn",
+    "fte": 1.0,
+    "shift_type": "12hr",
+    "shift_slot": "day",
+    "designated_weekend": "sat_sun",
+    "hire_date": "2020-09-22",
+    "adjusted_hire_date": null,
+    "specialties": [
+      "oncology",
+      "critical_care"
+    ],
+    "float_regions": [
+      "K5",
+      "K6"
+    ],
+    "can_charge": true,
+    "can_resource": false,
+    "cross_trained_units": [
+      "K5"
+    ],
+    "pto_hours_balance": 116.0,
+    "education_hours_balance": 40.0,
+    "pre_approved_vacation_weeks_used": 0,
+    "pre_approved_education_hours_used": 0.0,
+    "a_days_this_pay_period": 0,
+    "cancelled_hours_this_pay_period": 0.0,
+    "last_float_date": null,
+    "float_count_this_schedule": 0,
+    "gamification_points": 0,
+    "total_no_call_outs": 0,
+    "total_on_time": 0,
+    "total_shifts_picked_up": 0,
+    "total_swaps_completed": 0,
+    "current_streak_days": 0
+  },
+  {
+    "id": "N024",
+    "name": "Tip Kim",
+    "employee_type": "regular",
+    "role": "rn",
+    "fte": 0.9,
+    "shift_type": "12hr",
+    "shift_slot": "evening",
+    "designated_weekend": "sat_sun",
+    "hire_date": "2021-06-15",
+    "adjusted_hire_date": null,
+    "specialties": [
+      "telemetry",
+      "med_surg"
+    ],
+    "float_regions": [
+      "K5",
+      "K6"
+    ],
+    "can_charge": true,
+    "can_resource": false,
+    "cross_trained_units": [
+      "K5"
+    ],
+    "pto_hours_balance": 96.0,
+    "education_hours_balance": 40.0,
+    "pre_approved_vacation_weeks_used": 0,
+    "pre_approved_education_hours_used": 0.0,
+    "a_days_this_pay_period": 0,
+    "cancelled_hours_this_pay_period": 0.0,
+    "last_float_date": null,
+    "float_count_this_schedule": 0,
+    "gamification_points": 0,
+    "total_no_call_outs": 0,
+    "total_on_time": 0,
+    "total_shifts_picked_up": 0,
+    "total_swaps_completed": 0,
+    "current_streak_days": 0
   }
 ]

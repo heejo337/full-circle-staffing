@@ -1,1 +1,50 @@
-[]
+[
+  {
+    "id": "01d3567b-df61-4796-ad30-e550fd451678",
+    "requesting_nurse_id": "N011",
+    "accepting_nurse_id": "N012",
+    "original_shift_id": "Day shift Jun 2 (K5)",
+    "swap_shift_id": "Day shift Jun 2 (K5)",
+    "status": "pending",
+    "submitted_at": "2026-05-20T09:00:00.000000",
+    "trade_date": "2026-06-02",
+    "notes": "Demo swap request",
+    "manager_approved": false
+  },
+  {
+    "id": "7ac0f3e1-7a76-4505-9b78-88ae27e5e5d3",
+    "requesting_nurse_id": "N015",
+    "accepting_nurse_id": "N016",
+    "original_shift_id": "Day shift Jun 5 (K5)",
+    "swap_shift_id": "Night shift Jun 5 (K5)",
+    "status": "pending",
+    "submitted_at": "2026-05-20T09:00:00.000000",
+    "trade_date": "2026-06-05",
+    "notes": "Demo swap request",
+    "manager_approved": false
+  },
+  {
+    "id": "cfbe6f5f-28b9-4404-87b0-a2b7019d6db8",
+    "requesting_nurse_id": "N019",
+    "accepting_nurse_id": "N020",
+    "original_shift_id": "Night shift Jun 3 (K5)",
+    "swap_shift_id": "Day shift Jun 3 (K5)",
+    "status": "pending",
+    "submitted_at": "2026-05-20T09:00:00.000000",
+    "trade_date": "2026-06-03",
+    "notes": "Demo swap request",
+    "manager_approved": false
+  },
+  {
+    "id": "4d22aac3-dbf7-479c-81aa-eee289baca9c",
+    "requesting_nurse_id": "N021",
+    "accepting_nurse_id": "N024",
+    "original_shift_id": "Day shift Jun 4 (K5)",
+    "swap_shift_id": "Evening shift Jun 4 (K5)",
+    "status": "pending",
+    "submitted_at": "2026-05-20T09:00:00.000000",
+    "trade_date": "2026-06-04",
+    "notes": "Demo swap request",
+    "manager_approved": false
+  }
+]

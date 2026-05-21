@@ -13,5 +13,103 @@
     "decision_reason": "PTO request approved: 1 day(s). Charging 12 hrs PTO.",
     "pto_hours_to_use": 0.0,
     "education_activity": ""
+  },
+  {
+    "id": "a8262f41-0583-486c-b084-20b622b11c9a",
+    "nurse_id": "N013",
+    "request_type": "pto",
+    "dates": [
+      "2026-06-03"
+    ],
+    "shift_slot": null,
+    "status": "pending",
+    "submitted_at": "2026-05-20T09:00:00.000000",
+    "decided_at": null,
+    "decision_reason": "",
+    "pto_hours_to_use": 0.0,
+    "education_activity": ""
+  },
+  {
+    "id": "6d54c2c9-d797-45e2-8c57-1adce11afda8",
+    "nurse_id": "N014",
+    "request_type": "pre_approved_vacation",
+    "dates": [
+      "2026-06-09",
+      "2026-06-10",
+      "2026-06-11",
+      "2026-06-12",
+      "2026-06-13"
+    ],
+    "shift_slot": null,
+    "status": "pending",
+    "submitted_at": "2026-05-20T09:00:00.000000",
+    "decided_at": null,
+    "decision_reason": "",
+    "pto_hours_to_use": 0.0,
+    "education_activity": ""
+  },
+  {
+    "id": "6a4ea8c8-7c5d-4fd6-90be-8126686ec759",
+    "nurse_id": "N017",
+    "request_type": "pre_approved_education",
+    "dates": [
+      "2026-06-04"
+    ],
+    "shift_slot": null,
+    "status": "pending",
+    "submitted_at": "2026-05-20T09:00:00.000000",
+    "decided_at": null,
+    "decision_reason": "",
+    "pto_hours_to_use": 0.0,
+    "education_activity": "ACLS Recertification"
+  },
+  {
+    "id": "34a33684-1c65-4d15-9deb-4040927c415b",
+    "nurse_id": "N018",
+    "request_type": "a_day",
+    "dates": [
+      "2026-06-06"
+    ],
+    "shift_slot": null,
+    "status": "pending",
+    "submitted_at": "2026-05-20T09:00:00.000000",
+    "decided_at": null,
+    "decision_reason": "",
+    "pto_hours_to_use": 0.0,
+    "education_activity": ""
+  },
+  {
+    "id": "37cc42f1-a5a3-4aac-81c0-f94f5fddde41",
+    "nurse_id": "N022",
+    "request_type": "pto",
+    "dates": [
+      "2026-06-10"
+    ],
+    "shift_slot": null,
+    "status": "pending",
+    "submitted_at": "2026-05-20T09:00:00.000000",
+    "decided_at": null,
+    "decision_reason": "",
+    "pto_hours_to_use": 0.0,
+    "education_activity": ""
+  },
+  {
+    "id": "012b67c1-b632-4b28-924d-ea2444a46fd3",
+    "nurse_id": "N023",
+    "request_type": "pre_approved_vacation",
+    "dates": [
+      "2026-06-16",
+      "2026-06-17",
+      "2026-06-18",
+      "2026-06-19",
+      "2026-06-20"
+    ],
+    "shift_slot": null,
+    "status": "pending",
+    "submitted_at": "2026-05-20T09:00:00.000000",
+    "decided_at": null,
+    "decision_reason": "",
+    "pto_hours_to_use": 0.0,
+    "education_activity": ""
   }
 ]
