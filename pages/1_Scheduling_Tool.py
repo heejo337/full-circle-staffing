@@ -1287,24 +1287,225 @@ with tab_icu:
                     )
 
             if icu_result and icu_result.schedule.assignments:
-                st.markdown("**Generated assignments — first 7 days:**")
+                import plotly.express as px
+                import plotly.graph_objects as go
+                import calendar as _cal
+                from collections import defaultdict
+                from datetime import datetime as _dt
+
                 nurse_map = {n.id: n.name for n in storage.load_nurses()}
-                week1_end = needs_obj.schedule_start + timedelta(days=6)
-                week1_assigns = [
-                    a for a in icu_result.schedule.assignments if a.date <= week1_end
-                ]
-                if week1_assigns:
-                    rows = []
-                    for a in sorted(week1_assigns, key=lambda x: (x.date, x.shift_slot.value)):
-                        rows.append({
-                            "Date": a.date.strftime("%a %b %d"),
-                            "Shift": a.shift_slot.value,
-                            "Nurse": nurse_map.get(a.nurse_id, a.nurse_id),
-                            "Hours": a.hours,
-                            "Over Commit": "⚠️" if a.is_over_commitment else "",
-                            "Float": f"← {a.float_from_unit}" if a.is_float else "",
-                        })
-                    st.dataframe(pd.DataFrame(rows), use_container_width=True, height=280)
+                all_assigns = icu_result.schedule.assignments
+
+                SHIFT_COLORS = {
+                    "day":      "#3B82F6",
+                    "evening":  "#F59E0B",
+                    "night_12": "#6366F1",
+                    "night_8":  "#8B5CF6",
+                }
+                SHIFT_LABELS = {
+                    "day":      "Day  6:45a–3:15p",
+                    "evening":  "Eve  2:45p–11:15p",
+                    "night_12": "Night  6:45p–7:15a",
+                    "night_8":  "Night  10:45p–7:15a",
+                }
+
+                st.divider()
+                st.markdown("**Schedule Calendar View**")
+                cal_view = st.radio(
+                    "View mode", ["Daily", "Weekly", "Monthly"],
+                    horizontal=True, key="icu_cal_view",
+                )
+
+                # ── Daily ────────────────────────────────────────────────────
+                if cal_view == "Daily":
+                    all_sched_dates = sorted({a.date for a in all_assigns})
+                    sel_day = st.date_input(
+                        "Select date",
+                        value=all_sched_dates[0] if all_sched_dates else needs_obj.schedule_start,
+                        min_value=needs_obj.schedule_start,
+                        max_value=needs_obj.schedule_end,
+                        key="icu_cal_day",
+                    )
+                    day_assigns = [a for a in all_assigns if a.date == sel_day]
+                    if not day_assigns:
+                        st.info(f"No assignments on {sel_day}.")
+                    else:
+                        gantt_rows = []
+                        for a in sorted(day_assigns, key=lambda x: x.shift_slot.value):
+                            start_t, end_t, hrs = SHIFT_TIMES[a.shift_slot]
+                            start_dt = _dt.combine(sel_day, start_t)
+                            end_dt = _dt.combine(
+                                sel_day + timedelta(days=1) if end_t < start_t else sel_day,
+                                end_t,
+                            )
+                            gantt_rows.append({
+                                "Nurse": nurse_map.get(a.nurse_id, a.nurse_id),
+                                "Start": start_dt,
+                                "Finish": end_dt,
+                                "Shift": SHIFT_LABELS.get(a.shift_slot.value, a.shift_slot.value),
+                                "Hours": hrs,
+                                "Over Commit": "Yes" if a.is_over_commitment else "No",
+                            })
+
+                        df_gantt = pd.DataFrame(gantt_rows)
+                        fig = px.timeline(
+                            df_gantt,
+                            x_start="Start", x_end="Finish",
+                            y="Nurse", color="Shift",
+                            color_discrete_map={
+                                SHIFT_LABELS[k]: v for k, v in SHIFT_COLORS.items()
+                                if k in SHIFT_LABELS
+                            },
+                            hover_data=["Hours", "Over Commit"],
+                            title=sel_day.strftime("%A, %B %d %Y"),
+                        )
+                        fig.update_yaxes(autorange="reversed")
+                        fig.update_layout(
+                            height=max(320, len(gantt_rows) * 38 + 120),
+                            margin=dict(l=0, r=0, t=40, b=0),
+                            legend_title_text="Shift",
+                        )
+                        st.plotly_chart(fig, use_container_width=True)
+
+                        rows = []
+                        for a in sorted(day_assigns, key=lambda x: x.shift_slot.value):
+                            _, _, hrs = SHIFT_TIMES[a.shift_slot]
+                            rows.append({
+                                "Nurse": nurse_map.get(a.nurse_id, a.nurse_id),
+                                "Shift": SHIFT_LABELS.get(a.shift_slot.value, a.shift_slot.value),
+                                "Hrs": hrs,
+                                "Float": f"← {a.float_from_unit}" if a.is_float else "",
+                                "Over Commit": "⚠️" if a.is_over_commitment else "",
+                            })
+                        st.dataframe(
+                            pd.DataFrame(rows), use_container_width=True,
+                            hide_index=True, height=min(400, len(rows) * 38 + 40),
+                        )
+
+                # ── Weekly ───────────────────────────────────────────────────
+                elif cal_view == "Weekly":
+                    seen, week_starts = set(), []
+                    for d in sorted({a.date for a in all_assigns}):
+                        ws = d - timedelta(days=d.weekday())
+                        if ws not in seen:
+                            week_starts.append(ws)
+                            seen.add(ws)
+
+                    sel_week = st.selectbox(
+                        "Select week",
+                        week_starts,
+                        format_func=lambda w: f"Week of {w.strftime('%b %d, %Y')}",
+                        key="icu_cal_week",
+                    )
+                    week_days = [sel_week + timedelta(days=i) for i in range(7)]
+                    week_assigns = [a for a in all_assigns if sel_week <= a.date <= sel_week + timedelta(days=6)]
+
+                    shift_order = ["day", "evening", "night_12"]
+                    pivot_rows = []
+                    for slot in shift_order:
+                        row = {"Shift": SHIFT_LABELS.get(slot, slot)}
+                        for d in week_days:
+                            names = [
+                                nurse_map.get(a.nurse_id, a.nurse_id)
+                                for a in week_assigns
+                                if a.date == d and a.shift_slot.value == slot
+                            ]
+                            row[d.strftime("%a %-d")] = ", ".join(names) if names else "—"
+                        pivot_rows.append(row)
+
+                    df_week = pd.DataFrame(pivot_rows).set_index("Shift")
+                    st.dataframe(df_week, use_container_width=True, height=160)
+
+                    # Per-day detail cards
+                    st.markdown("**Day-by-day breakdown:**")
+                    day_cols = st.columns(7)
+                    for i, d in enumerate(week_days):
+                        day_a = [a for a in week_assigns if a.date == d]
+                        with day_cols[i]:
+                            st.markdown(
+                                f"**{d.strftime('%a')}**  \n{d.strftime('%-d')}"
+                            )
+                            for slot in shift_order:
+                                nurses_on = [
+                                    nurse_map.get(a.nurse_id, a.nurse_id).split()[-1]
+                                    for a in day_a if a.shift_slot.value == slot
+                                ]
+                                if nurses_on:
+                                    color = {"day": "blue", "evening": "orange", "night_12": "violet"}[slot]
+                                    icon = {"day": "☀", "evening": "🌙", "night_12": "★"}[slot]
+                                    st.markdown(
+                                        f":{color}[{icon} {', '.join(nurses_on)}]",
+                                        help=SHIFT_LABELS.get(slot),
+                                    )
+
+                # ── Monthly ──────────────────────────────────────────────────
+                elif cal_view == "Monthly":
+                    months_in_sched = []
+                    seen_m = set()
+                    cur_m = date(needs_obj.schedule_start.year, needs_obj.schedule_start.month, 1)
+                    while cur_m <= needs_obj.schedule_end:
+                        if cur_m not in seen_m:
+                            months_in_sched.append(cur_m)
+                            seen_m.add(cur_m)
+                        cur_m = (cur_m.replace(day=28) + timedelta(days=4)).replace(day=1)
+
+                    sel_month = st.selectbox(
+                        "Select month",
+                        months_in_sched,
+                        format_func=lambda m: m.strftime("%B %Y"),
+                        key="icu_cal_month",
+                    ) if len(months_in_sched) > 1 else months_in_sched[0]
+
+                    by_date: dict = defaultdict(lambda: defaultdict(list))
+                    for a in all_assigns:
+                        by_date[a.date][a.shift_slot.value].append(
+                            nurse_map.get(a.nurse_id, a.nurse_id).split()[-1]
+                        )
+
+                    weeks_grid = _cal.monthcalendar(sel_month.year, sel_month.month)
+                    html = f"""
+<style>
+.icu-cal{{width:100%;border-collapse:collapse;font-size:11px;font-family:sans-serif}}
+.icu-cal th{{background:#1E293B;color:#fff;padding:6px;text-align:center;font-weight:600}}
+.icu-cal td{{border:1px solid #E2E8F0;padding:4px;vertical-align:top;min-height:72px;width:14%}}
+.icu-cal td.out{{background:#F8FAFC}}
+.icu-cal .dn{{font-weight:700;color:#334155;margin-bottom:3px;font-size:12px}}
+.icu-cal .dn.today{{color:#2563EB}}
+.s-day{{background:#DBEAFE;color:#1E40AF;border-radius:3px;padding:1px 4px;margin:1px 0;display:block}}
+.s-eve{{background:#FEF3C7;color:#92400E;border-radius:3px;padding:1px 4px;margin:1px 0;display:block}}
+.s-ngt{{background:#EDE9FE;color:#4C1D95;border-radius:3px;padding:1px 4px;margin:1px 0;display:block}}
+</style>
+<h4 style="margin:0 0 8px">{sel_month.strftime('%B %Y')}</h4>
+<table class="icu-cal">
+<tr><th>Mon</th><th>Tue</th><th>Wed</th><th>Thu</th><th>Fri</th><th>Sat</th><th>Sun</th></tr>
+"""
+                    today = date.today()
+                    for week in weeks_grid:
+                        html += "<tr>"
+                        for dn in week:
+                            if dn == 0:
+                                html += '<td class="out"></td>'
+                            else:
+                                d = date(sel_month.year, sel_month.month, dn)
+                                in_range = needs_obj.schedule_start <= d <= needs_obj.schedule_end
+                                today_cls = " today" if d == today else ""
+                                html += f'<td><div class="dn{today_cls}">{dn}</div>'
+                                if in_range:
+                                    for nm in by_date[d].get("day", []):
+                                        html += f'<span class="s-day">☀ {nm}</span>'
+                                    for nm in by_date[d].get("evening", []):
+                                        html += f'<span class="s-eve">🌙 {nm}</span>'
+                                    for nm in by_date[d].get("night_12", []):
+                                        html += f'<span class="s-ngt">★ {nm}</span>'
+                                html += "</td>"
+                        html += "</tr>"
+                    html += """</table>
+<div style="margin-top:8px;display:flex;gap:12px;font-size:11px">
+<span style="background:#DBEAFE;color:#1E40AF;padding:2px 8px;border-radius:3px">☀ Day</span>
+<span style="background:#FEF3C7;color:#92400E;padding:2px 8px;border-radius:3px">🌙 Evening</span>
+<span style="background:#EDE9FE;color:#4C1D95;padding:2px 8px;border-radius:3px">★ Night</span>
+</div>"""
+                    st.markdown(html, unsafe_allow_html=True)
 
         else:
             st.info("Fill in census data on the left and click **Generate ICU Schedule**.")
