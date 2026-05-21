@@ -132,7 +132,7 @@ if "api_key_set" not in st.session_state:
 # SIDEBAR
 # ════════════════════════════════════════════════════════════════════════════
 with st.sidebar:
-    st.title("🏥 NurseScheduler")
+    st.title("🏥 FullCircle")
     st.caption("SHC / CRONA Compliant")
     st.divider()
 

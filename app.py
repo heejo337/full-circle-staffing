@@ -1,12 +1,12 @@
 """
-NurseScheduler — Marketing Landing Page
+FullCircle — Marketing Landing Page
 readyon.com-style B2B SaaS design
 """
 
 import streamlit as st
 
 st.set_page_config(
-    page_title="NurseScheduler — Frontline scheduling that runs itself",
+    page_title="FullCircle — Frontline scheduling that runs itself",
     page_icon="🏥",
     layout="wide",
     initial_sidebar_state="collapsed",
@@ -370,7 +370,7 @@ body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; }
 
 <!-- NAV -->
 <nav class="ns-nav">
-    <a href="#" class="ns-logo">🏥 NurseScheduler<span class="ns-logo-dot">.</span></a>
+    <a href="#" class="ns-logo">🏥 FullCircle<span class="ns-logo-dot">.</span></a>
     <ul class="ns-nav-links">
         <li><a href="#how-it-works">How it works</a></li>
         <li><a href="#features">Features</a></li>
@@ -615,7 +615,7 @@ body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; }
 
 <!-- FOOTER -->
 <div class="ns-footer">
-    <div class="ns-footer-logo">🏥 NurseScheduler</div>
+    <div class="ns-footer-logo">🏥 FullCircle</div>
     <div class="ns-footer-links">
         <a href="#how-it-works">How it works</a>
         <a href="#features">Features</a>
