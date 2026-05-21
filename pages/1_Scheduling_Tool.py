@@ -489,6 +489,83 @@ with tab_requests:
                         st.write(message)
 
     with hist_col:
+        st.subheader("Pending Approvals")
+
+        nmap = {n.id: n.name for n in nurses}
+
+        # ── Pending time-off requests ────────────────────────────────────────
+        pending_tor = [r for r in storage.load_time_off_requests() if r.status.value == "pending"]
+        pending_swaps = [s for s in storage.load_swap_requests() if s.status.value == "pending"]
+
+        if not pending_tor and not pending_swaps:
+            st.success("No pending requests — all caught up.")
+        else:
+            st.caption(f"{len(pending_tor)} time-off · {len(pending_swaps)} swap requests pending")
+
+        for r in sorted(pending_tor, key=lambda x: x.submitted_at, reverse=True):
+            date_str = (
+                f"{min(r.dates)} – {max(r.dates)}" if len(r.dates) > 1 else str(r.dates[0])
+            )
+            label = f"🟡 {nmap.get(r.nurse_id, r.nurse_id)} — {r.request_type.value.replace('_',' ').title()} — {date_str}"
+            with st.expander(label, expanded=True):
+                st.write(f"**Nurse:** {nmap.get(r.nurse_id, r.nurse_id)}")
+                st.write(f"**Type:** {r.request_type.value.replace('_',' ').title()}")
+                st.write(f"**Date(s):** {date_str}")
+                if r.education_activity:
+                    st.write(f"**Activity:** {r.education_activity}")
+                st.write(f"**Submitted:** {r.submitted_at.strftime('%Y-%m-%d %H:%M')}")
+
+                mgr_note = st.text_input(
+                    "Manager note (optional)", key=f"note_{r.id}", placeholder="Reason for decision…"
+                )
+                col_a, col_d = st.columns(2)
+                if col_a.button("✅ Approve", key=f"approve_{r.id}", use_container_width=True):
+                    r.status = RequestStatus.APPROVED
+                    r.decided_at = datetime.now()
+                    r.decision_reason = mgr_note or "Approved by manager."
+                    storage.save_time_off_request(r)
+                    st.success(f"Approved {nmap.get(r.nurse_id, r.nurse_id)}'s request.")
+                    st.rerun()
+                if col_d.button("❌ Decline", key=f"decline_{r.id}", use_container_width=True):
+                    r.status = RequestStatus.DENIED
+                    r.decided_at = datetime.now()
+                    r.decision_reason = mgr_note or "Declined by manager."
+                    storage.save_time_off_request(r)
+                    st.warning(f"Declined {nmap.get(r.nurse_id, r.nurse_id)}'s request.")
+                    st.rerun()
+
+        for s in sorted(pending_swaps, key=lambda x: x.submitted_at, reverse=True):
+            req_name = nmap.get(s.requesting_nurse_id, s.requesting_nurse_id)
+            acc_name = nmap.get(s.accepting_nurse_id, s.accepting_nurse_id) if s.accepting_nurse_id else "TBD"
+            label = f"🟡 Swap — {req_name} ↔ {acc_name} — {s.trade_date}"
+            with st.expander(label, expanded=True):
+                st.write(f"**Requesting:** {req_name}")
+                st.write(f"**Accepting:** {acc_name}")
+                st.write(f"**Trade date:** {s.trade_date}")
+                st.write(f"**Shift A:** {s.original_shift_id}")
+                st.write(f"**Shift B:** {s.swap_shift_id}")
+                if s.notes:
+                    st.write(f"**Notes:** {s.notes}")
+                st.write(f"**Submitted:** {s.submitted_at.strftime('%Y-%m-%d %H:%M')}")
+
+                swap_note = st.text_input(
+                    "Manager note (optional)", key=f"swap_note_{s.id}", placeholder="Reason for decision…"
+                )
+                col_a, col_d = st.columns(2)
+                if col_a.button("✅ Approve", key=f"swap_approve_{s.id}", use_container_width=True):
+                    s.status = RequestStatus.APPROVED
+                    s.manager_approved = True
+                    storage.save_swap_request(s)
+                    st.success(f"Swap approved: {req_name} ↔ {acc_name}")
+                    st.rerun()
+                if col_d.button("❌ Decline", key=f"swap_decline_{s.id}", use_container_width=True):
+                    s.status = RequestStatus.DENIED
+                    s.manager_approved = False
+                    storage.save_swap_request(s)
+                    st.warning(f"Swap declined: {req_name} ↔ {acc_name}")
+                    st.rerun()
+
+        st.divider()
         st.subheader("Request History")
         all_requests = storage.load_time_off_requests()
         filter_nurse = st.selectbox(
@@ -508,7 +585,6 @@ with tab_requests:
         if not filtered:
             st.info("No requests found.")
         else:
-            nmap = {n.id: n.name for n in nurses}
             for r in filtered:
                 color = {"approved": "🟢", "denied": "🔴", "pending": "🟡"}.get(r.status.value, "⚪")
                 date_str = (
