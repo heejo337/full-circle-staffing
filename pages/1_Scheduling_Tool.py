@@ -273,7 +273,12 @@ def _check_swap_eligibility(
         blocks.append(reason)
     else:
         days_until = (trade_date - date.today()).days
-        info.append(f"Lead time: {days_until} days ✓ (minimum 3 required per Scheduling Policy §II.B.2.b)")
+        info.append(
+            f"Lead time: {days_until} days ✓ — swap was submitted {days_until} days before the trade date "
+            f"({trade_date.strftime('%b %d')}). Policy requires requests to be submitted at least 3 calendar days "
+            f"in advance so the manager has time to review before the schedule is affected "
+            f"(Scheduling Policy §II.B.2.b)."
+        )
 
     # Check both nurses for approved time-off on trade date
     for nurse in (req_nurse, acc_nurse):
