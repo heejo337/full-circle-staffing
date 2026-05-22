@@ -1127,23 +1127,7 @@ with tab_icu:
     </style>
     """, unsafe_allow_html=True)
 
-    # ── Unit selector ─────────────────────────────────────────────────────────
-    UNITS = ["ICU", "AAU", "ER", "ORI", "Ambulatory"]
-    if "fc_active_unit" not in st.session_state:
-        st.session_state["fc_active_unit"] = "ICU"
-
-    unit_cols = st.columns(len(UNITS) + 4)
-    for i, u in enumerate(UNITS):
-        is_active = st.session_state["fc_active_unit"] == u
-        if unit_cols[i].button(
-            u, key=f"fc_unit_{u}",
-            type="primary" if is_active else "secondary",
-            use_container_width=True,
-        ):
-            st.session_state["fc_active_unit"] = u
-            st.rerun()
-
-    active_unit = st.session_state["fc_active_unit"]
+    active_unit = "ICU"
 
     # ── Derive metrics ────────────────────────────────────────────────────────
     all_nurses_icu = storage.load_nurses()
