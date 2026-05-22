@@ -1057,360 +1057,471 @@ with tab_gamification:
             st.success(f"{'⭐' * rate_stars} rating recorded for {rate_nurse}!")
 
 
+
+
 # ════════════════════════════════════════════════════════════════════════════
-# TAB 6 — ICU SCHEDULE
+# TAB 6 — ICU SCHEDULE DASHBOARD
 # ════════════════════════════════════════════════════════════════════════════
 with tab_icu:
-    st.header("ICU Schedule Generator")
-    st.caption(
-        "Enter census and acuity data to automatically calculate staffing requirements "
-        "and generate a CRONA-compliant ICU schedule."
-    )
+    import plotly.express as px
+    import calendar as _cal
+    from collections import defaultdict
+    from datetime import datetime as _dt
 
-    icu_left, icu_right = st.columns([1, 1])
+    st.markdown("""
+    <style>
+    .fc-unit-bar{display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap}
+    .fc-unit-btn{padding:6px 18px;border-radius:100px;border:1.5px solid #E2E8F0;
+        font-size:13px;font-weight:600;cursor:pointer;background:#fff;color:#64748B;
+        transition:all .15s}
+    .fc-unit-btn.active{background:#0F172A;color:#fff;border-color:#0F172A}
+    .fc-hdr{background:#0F172A;border-radius:12px;padding:16px 24px;
+        display:flex;justify-content:space-between;align-items:center;
+        flex-wrap:wrap;gap:12px;margin-bottom:16px}
+    .fc-hdr-left{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+    .fc-org{font-size:15px;font-weight:700;color:#F1F5F9}
+    .fc-hdot{color:#475569;font-size:16px}
+    .fc-hmeta{font-size:13px;color:#94A3B8}
+    .fc-hdr-right{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+    .fc-shift-chip{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);
+        color:#CBD5E1;font-size:12px;font-weight:500;padding:4px 10px;border-radius:6px}
+    .fc-online{background:#DCFCE7;color:#166534;font-size:12px;font-weight:600;
+        padding:4px 12px;border-radius:100px}
+    .fc-mcard{background:#fff;border:1px solid #E2E8F0;border-radius:10px;
+        padding:18px 20px;height:100%}
+    .fc-mcard-label{font-size:11px;font-weight:700;letter-spacing:.08em;
+        text-transform:uppercase;color:#94A3B8;margin-bottom:6px}
+    .fc-mcard-val{font-size:26px;font-weight:800;color:#0F172A;letter-spacing:-1px;
+        line-height:1.1}
+    .fc-mcard-sub{font-size:12px;color:#64748B;margin-top:4px;line-height:1.4}
+    .fc-mcard-badge{display:inline-block;background:#DCFCE7;color:#166534;
+        font-size:11px;font-weight:700;padding:2px 8px;border-radius:100px;margin-top:6px}
+    .fc-stat-box{background:#F8FAFC;border-radius:8px;padding:14px 16px;text-align:center}
+    .fc-stat-val{font-size:28px;font-weight:800;color:#0F172A;letter-spacing:-1px}
+    .fc-stat-label{font-size:12px;color:#64748B;margin-top:2px}
+    .fc-stat-sub{font-size:11px;color:#94A3B8;margin-top:2px}
+    .fc-cal-full{width:100%;border-collapse:collapse;font-family:'Inter',sans-serif;
+        table-layout:fixed;font-size:13px}
+    .fc-cal-full th{background:#0F172A;color:#fff;padding:10px 6px;text-align:center;
+        font-weight:700;font-size:13px}
+    .fc-cal-full td{border:1px solid #E2E8F0;padding:8px;vertical-align:top;
+        height:120px;width:14.28%}
+    .fc-cal-full td.out{background:#F8FAFC;opacity:.5}
+    .fc-dn{font-weight:800;color:#334155;font-size:15px;margin-bottom:4px}
+    .fc-dn.today{color:#2563EB}
+    .fc-wk{font-size:10px;font-weight:700;letter-spacing:.08em;color:#94A3B8;
+        text-transform:uppercase;margin-bottom:4px}
+    .fc-cnt{font-size:18px;font-weight:800;letter-spacing:-0.5px;margin:4px 0 2px}
+    .fc-cnt.full{color:#16A34A}
+    .fc-cnt.warn{color:#D97706}
+    .fc-cnt.gap{color:#DC2626}
+    .s-day-f{background:#DBEAFE;color:#1E40AF;border-radius:3px;padding:2px 5px;
+        margin:1px 0;display:block;font-size:11px;overflow:hidden;
+        text-overflow:ellipsis;white-space:nowrap}
+    .s-eve-f{background:#FEF3C7;color:#92400E;border-radius:3px;padding:2px 5px;
+        margin:1px 0;display:block;font-size:11px;overflow:hidden;
+        text-overflow:ellipsis;white-space:nowrap}
+    .s-ngt-f{background:#EDE9FE;color:#4C1D95;border-radius:3px;padding:2px 5px;
+        margin:1px 0;display:block;font-size:11px;overflow:hidden;
+        text-overflow:ellipsis;white-space:nowrap}
+    </style>
+    """, unsafe_allow_html=True)
 
-    # ── Left column: ICU Operational Needs Input ─────────────────────────────
-    with icu_left:
-        st.subheader("ICU Operational Needs")
+    # ── Unit selector ─────────────────────────────────────────────────────────
+    UNITS = ["ICU", "AAU", "ER", "ORI", "Ambulatory"]
+    if "fc_active_unit" not in st.session_state:
+        st.session_state["fc_active_unit"] = "ICU"
 
-        icu_unit = st.text_input(
-            "ICU Unit", value="CVICU",
-            help="e.g. CVICU, MICU, SICU, NSICU, PICU",
-            key="icu_unit",
-        )
-        icu_col1, icu_col2 = st.columns(2)
-        icu_start = icu_col1.date_input(
-            "Schedule start", value=date.today() + timedelta(days=7), key="icu_start"
-        )
-        icu_weeks = icu_col2.number_input(
-            "Weeks", min_value=1, max_value=8, value=4, key="icu_weeks"
-        )
-        icu_bed_cap = st.number_input(
-            "ICU bed capacity", min_value=4, max_value=60, value=20, key="icu_bed_cap"
-        )
-
-        st.divider()
-        st.markdown("**Census & Acuity by Shift**")
-        st.caption(
-            "Critical patients require a **1:1** RN ratio. "
-            "Stable patients require a **1:2** RN ratio."
-        )
-
-        census_mode = st.radio(
-            "Census input mode",
-            ["Uniform (same for all shifts)", "By shift type (day / eve / night)"],
-            key="icu_census_mode",
-            horizontal=True,
-        )
-
-        def _census_block(suffix: str, label: str):
-            with st.expander(label, expanded=True):
-                c1, c2 = st.columns(2)
-                crit = c1.number_input("Critical (1:1)", min_value=0, max_value=30,
-                                       value=4, key=f"icu_crit_{suffix}")
-                stbl = c2.number_input("Stable (1:2)", min_value=0, max_value=30,
-                                       value=8, key=f"icu_stbl_{suffix}")
-                c3, c4 = st.columns(2)
-                vent = c3.number_input("On ventilator", min_value=0, max_value=30,
-                                       value=2, key=f"icu_vent_{suffix}")
-                ecmo = c4.number_input("On ECMO", min_value=0, max_value=10,
-                                       value=0, key=f"icu_ecmo_{suffix}")
-            return crit, stbl, vent, ecmo
-
-        if census_mode.startswith("Uniform"):
-            day_crit, day_stbl, day_vent, day_ecmo = _census_block("all", "All Shifts")
-            eve_crit, eve_stbl, eve_vent, eve_ecmo = day_crit, day_stbl, day_vent, day_ecmo
-            ngt_crit, ngt_stbl, ngt_vent, ngt_ecmo = day_crit, day_stbl, day_vent, day_ecmo
-        else:
-            day_crit, day_stbl, day_vent, day_ecmo = _census_block("day", "Day Shift")
-            eve_crit, eve_stbl, eve_vent, eve_ecmo = _census_block("eve", "Evening Shift")
-            ngt_crit, ngt_stbl, ngt_vent, ngt_ecmo = _census_block("ngt", "Night Shift (12hr)")
-
-        import math as _math
-
-        def _rns(crit, stbl):
-            return crit + _math.ceil(stbl / 2) if (crit + stbl) > 0 else 0
-
-        day_rns = _rns(day_crit, day_stbl)
-        eve_rns = _rns(eve_crit, eve_stbl)
-        ngt_rns = _rns(ngt_crit, ngt_stbl)
-
-        st.markdown("**Calculated staffing requirement:**")
-        pc1, pc2, pc3 = st.columns(3)
-        pc1.metric("Day RNs", day_rns, help="= critical + ⌈stable ÷ 2⌉")
-        pc2.metric("Evening RNs", eve_rns)
-        pc3.metric("Night RNs (12hr)", ngt_rns)
-
-        day_census_total = day_crit + day_stbl
-        occupancy_pct = round((day_census_total / icu_bed_cap) * 100) if icu_bed_cap > 0 else 0
-        st.caption(
-            f"Day shift occupancy: **{day_census_total}/{icu_bed_cap} beds** ({occupancy_pct}%)"
-        )
-
-        st.divider()
-        st.markdown("**Additional staffing needs:**")
-        ac1, ac2 = st.columns(2)
-        icu_charge = ac1.checkbox("Charge nurse (each day shift)", value=True, key="icu_charge")
-        icu_resource = ac2.checkbox("Resource nurse needed", value=False, key="icu_resource")
-
-        sc1, sc2, sc3 = st.columns(3)
-        icu_vent_spec = sc1.checkbox(
-            "Vent specialist", value=bool(day_vent > 0), key="icu_vent_spec"
-        )
-        icu_ecmo_spec = sc2.checkbox(
-            "ECMO capable", value=bool(day_ecmo > 0), key="icu_ecmo_spec"
-        )
-        icu_crrt_spec = sc3.checkbox("CRRT capable", value=False, key="icu_crrt_spec")
-
-        icu_notes = st.text_area(
-            "Clinical notes / context", key="icu_notes", height=68,
-            placeholder="e.g. Post-cardiac surgery surge, 2 ECMO patients expected this week",
-        )
-
-        if st.button(
-            "⚡ Generate ICU Schedule", type="primary",
-            use_container_width=True, key="btn_icu_gen"
+    unit_cols = st.columns(len(UNITS) + 4)
+    for i, u in enumerate(UNITS):
+        is_active = st.session_state["fc_active_unit"] == u
+        if unit_cols[i].button(
+            u, key=f"fc_unit_{u}",
+            type="primary" if is_active else "secondary",
+            use_container_width=True,
         ):
-            if not st.session_state.api_key_set:
-                st.error("API key required.")
-            elif day_rns == 0 and eve_rns == 0 and ngt_rns == 0:
-                st.warning("No patients entered — fill in census data above.")
+            st.session_state["fc_active_unit"] = u
+            st.rerun()
+
+    active_unit = st.session_state["fc_active_unit"]
+
+    # ── Derive metrics ────────────────────────────────────────────────────────
+    all_nurses_icu = storage.load_nurses()
+    icu_result_d  = st.session_state.get("icu_result")
+    needs_obj_d   = st.session_state.get("icu_needs_obj")
+
+    total_n       = len(all_nurses_icu)
+    charge_n      = sum(1 for n in all_nurses_icu if n.can_charge)
+    schedule_generated = icu_result_d is not None and needs_obj_d is not None
+
+    if schedule_generated:
+        all_asgn      = icu_result_d.schedule.assignments
+        total_slots   = len(all_asgn)
+        gaps          = icu_result_d.coverage_gaps or []
+        gap_count     = len(gaps)
+        charge_gaps   = sum(1 for g in gaps if "charge" in g.get("required_role","").lower())
+        filled_pct    = round((total_slots / max(total_slots, 1)) * 100)
+        period_label  = f"{needs_obj_d.schedule_start.strftime('%b %d')} – {needs_obj_d.schedule_end.strftime('%b %d, %Y')}"
+        schedule_id   = needs_obj_d.schedule_start.strftime("%Y-%m") + " schedule"
+        weeks_count   = max(1, round((needs_obj_d.schedule_end - needs_obj_d.schedule_start).days / 7))
+    else:
+        total_slots = gaps = gap_count = charge_gaps = 0
+        filled_pct  = 0
+        period_label = "Not generated"
+        schedule_id  = date.today().strftime("%Y-%m") + " schedule"
+        weeks_count  = 4
+
+    # ── Header info bar ───────────────────────────────────────────────────────
+    status_html = '<span class="fc-online">● Manager Online · {}% filled</span>'.format(
+        filled_pct if schedule_generated else "—"
+    )
+    st.markdown(f"""
+    <div class="fc-hdr">
+      <div class="fc-hdr-left">
+        <span class="fc-org">Stanford Health Care · {active_unit}</span>
+        <span class="fc-hdot">·</span>
+        <span class="fc-hmeta">{total_n} nurses</span>
+        <span class="fc-hdot">·</span>
+        <span class="fc-hmeta">target 14–16/shift</span>
+        <span class="fc-hdot">·</span>
+        <span class="fc-hmeta">12h shifts</span>
+      </div>
+      <div class="fc-hdr-right">
+        <span class="fc-shift-chip">Day 0700–1900</span>
+        <span class="fc-shift-chip">Night 1900–0700</span>
+        {status_html}
+      </div>
+    </div>
+    """, unsafe_allow_html=True)
+
+    # ── 4 metric cards ────────────────────────────────────────────────────────
+    mc1, mc2, mc3, mc4 = st.columns(4)
+    filled_str = f"{total_slots} of {total_slots}" if schedule_generated else "—"
+    mc1.markdown(f"""<div class="fc-mcard">
+      <div class="fc-mcard-label">Coverage</div>
+      <div class="fc-mcard-val">{filled_str}</div>
+      <div class="fc-mcard-sub">shift-slots filled</div>
+      <span class="fc-mcard-badge">{'100% filled' if schedule_generated and gap_count==0 else f'{gap_count} gap(s)'}</span>
+    </div>""", unsafe_allow_html=True)
+
+    mc2.markdown(f"""<div class="fc-mcard">
+      <div class="fc-mcard-label">Staffing Composition</div>
+      <div class="fc-mcard-val">12–14</div>
+      <div class="fc-mcard-sub">Bed RNs per shift<br>1 Charge (RSN1) · 1 Resource (RSN2)</div>
+    </div>""", unsafe_allow_html=True)
+
+    mc3.markdown(f"""<div class="fc-mcard">
+      <div class="fc-mcard-label">Shift Structure</div>
+      <div class="fc-mcard-val">12h</div>
+      <div class="fc-mcard-sub">Day 0700–1900 · Night 1900–0700<br>~30 min handoff overlap</div>
+    </div>""", unsafe_allow_html=True)
+
+    mc4.markdown(f"""<div class="fc-mcard">
+      <div class="fc-mcard-label">Schedule Period</div>
+      <div class="fc-mcard-val">{weeks_count}wk</div>
+      <div class="fc-mcard-sub">{period_label}</div>
+    </div>""", unsafe_allow_html=True)
+
+    st.markdown("<div style='margin-top:4px'></div>", unsafe_allow_html=True)
+
+    # ── Stats row + schedule controls ─────────────────────────────────────────
+    stats_col, gen_col = st.columns([3, 1])
+    with stats_col:
+        s1, s2, s3, s4 = st.columns(4)
+        s1.markdown(f"""<div class="fc-stat-box">
+          <div class="fc-stat-val">{total_n}</div>
+          <div class="fc-stat-label">Nurses</div>
+          <div class="fc-stat-sub">{charge_n} charge-eligible</div>
+        </div>""", unsafe_allow_html=True)
+        shifts_n = total_slots if schedule_generated else 0
+        s2.markdown(f"""<div class="fc-stat-box">
+          <div class="fc-stat-val">{shifts_n}</div>
+          <div class="fc-stat-label">Shifts</div>
+          <div class="fc-stat-sub">targeting 14–16/shift</div>
+        </div>""", unsafe_allow_html=True)
+        cov_str = f"{total_slots}/{total_slots}" if schedule_generated else "—"
+        s3.markdown(f"""<div class="fc-stat-box">
+          <div class="fc-stat-val">{cov_str}</div>
+          <div class="fc-stat-label">Coverage</div>
+          <div class="fc-stat-sub">{'100% filled' if schedule_generated else 'not generated'}</div>
+        </div>""", unsafe_allow_html=True)
+        s4.markdown(f"""<div class="fc-stat-box">
+          <div class="fc-stat-val">{gap_count}</div>
+          <div class="fc-stat-label">Gaps</div>
+          <div class="fc-stat-sub">{charge_gaps} charge gaps</div>
+        </div>""", unsafe_allow_html=True)
+
+    with gen_col:
+        st.caption(f"📋 {schedule_id}")
+        if schedule_generated:
+            if st.button("🔄 Regenerate", use_container_width=True, key="fc_regen"):
+                for k in ["icu_result", "icu_narrative", "icu_needs_obj"]:
+                    st.session_state.pop(k, None)
+                st.rerun()
+            st.button("📤 Publish Schedule", use_container_width=True,
+                      type="primary", key="fc_publish")
+        else:
+            st.info("Generate a schedule in Schedule Builder ↓")
+
+    st.divider()
+
+    # ── Sub-navigation tabs ───────────────────────────────────────────────────
+    sub_tabs = st.tabs([
+        "📅 Schedule Builder",
+        "👥 Roster",
+        "📋 Requests",
+        "🏖 Time Off",
+        "🔄 Swaps",
+        "📊 Coverage",
+        "💚 Wellness",
+        "📖 Policy Assistant",
+    ])
+
+    SHIFT_COLORS = {
+        "day": "#3B82F6", "evening": "#F59E0B",
+        "night_12": "#6366F1", "night_8": "#8B5CF6",
+    }
+    SHIFT_LABELS = {
+        "day": "Day  0700–1900", "evening": "Eve  1500–0300",
+        "night_12": "Night  1900–0700", "night_8": "Night  2245–0715",
+    }
+    nurse_map_d = {n.id: n.name for n in all_nurses_icu}
+
+    # ════════════════════════════════════════════════════════════════════════
+    # SUB-TAB 1 — SCHEDULE BUILDER
+    # ════════════════════════════════════════════════════════════════════════
+    with sub_tabs[0]:
+        with st.expander("⚙️ ICU Operational Needs", expanded=not schedule_generated):
+            icu_unit = st.text_input(
+                "ICU Unit", value="ICU",
+                help="e.g. ICU, CVICU, MICU, SICU", key="icu_unit",
+            )
+            bc1, bc2, bc3 = st.columns(3)
+            icu_start = bc1.date_input(
+                "Start date", value=date.today() + timedelta(days=7), key="icu_start"
+            )
+            icu_weeks = bc2.number_input(
+                "Weeks", min_value=1, max_value=8, value=4, key="icu_weeks"
+            )
+            icu_bed_cap = bc3.number_input(
+                "Bed capacity", min_value=4, max_value=60, value=20, key="icu_bed_cap"
+            )
+
+            st.markdown("**Census & Acuity**")
+            st.caption("Critical = 1:1 RN ratio · Stable = 1:2 RN ratio")
+            census_mode = st.radio(
+                "Census mode",
+                ["Uniform (all shifts)", "By shift type"],
+                horizontal=True, key="icu_census_mode",
+            )
+
+            def _cb(suffix, label):
+                with st.expander(label, expanded=True):
+                    a, b = st.columns(2)
+                    cr = a.number_input("Critical (1:1)", 0, 30, 4, key=f"icu_crit_{suffix}")
+                    st = b.number_input("Stable (1:2)",   0, 30, 8, key=f"icu_stbl_{suffix}")
+                    c, d = st.columns(2) if False else (a, b)
+                    vt = a.number_input("Vent",  0, 30, 2, key=f"icu_vent_{suffix}")
+                    ec = b.number_input("ECMO",  0, 10, 0, key=f"icu_ecmo_{suffix}")
+                return cr, st, vt, ec
+
+            import math as _math
+
+            if census_mode.startswith("Uniform"):
+                with st.expander("All Shifts", expanded=True):
+                    ca1, ca2 = st.columns(2)
+                    day_crit = ca1.number_input("Critical (1:1)", 0, 30, 4, key="icu_crit_all")
+                    day_stbl = ca2.number_input("Stable (1:2)",   0, 30, 8, key="icu_stbl_all")
+                    ca3, ca4 = st.columns(2)
+                    day_vent = ca3.number_input("Vent", 0, 30, 2, key="icu_vent_all")
+                    day_ecmo = ca4.number_input("ECMO", 0, 10, 0, key="icu_ecmo_all")
+                eve_crit, eve_stbl, eve_vent, eve_ecmo = day_crit, day_stbl, day_vent, day_ecmo
+                ngt_crit, ngt_stbl, ngt_vent, ngt_ecmo = day_crit, day_stbl, day_vent, day_ecmo
             else:
-                icu_end = icu_start + timedelta(weeks=int(icu_weeks)) - timedelta(days=1)
+                with st.expander("Day Shift", expanded=True):
+                    da1, da2 = st.columns(2)
+                    day_crit = da1.number_input("Critical", 0, 30, 4, key="icu_crit_day")
+                    day_stbl = da2.number_input("Stable",   0, 30, 8, key="icu_stbl_day")
+                    da3, da4 = st.columns(2)
+                    day_vent = da3.number_input("Vent", 0, 30, 2, key="icu_vent_day")
+                    day_ecmo = da4.number_input("ECMO", 0, 10, 0, key="icu_ecmo_day")
+                with st.expander("Evening Shift", expanded=True):
+                    ea1, ea2 = st.columns(2)
+                    eve_crit = ea1.number_input("Critical", 0, 30, 4, key="icu_crit_eve")
+                    eve_stbl = ea2.number_input("Stable",   0, 30, 8, key="icu_stbl_eve")
+                    ea3, ea4 = st.columns(2)
+                    eve_vent = ea3.number_input("Vent", 0, 30, 2, key="icu_vent_eve")
+                    eve_ecmo = ea4.number_input("ECMO", 0, 10, 0, key="icu_ecmo_eve")
+                with st.expander("Night Shift", expanded=True):
+                    na1, na2 = st.columns(2)
+                    ngt_crit = na1.number_input("Critical", 0, 30, 4, key="icu_crit_ngt")
+                    ngt_stbl = na2.number_input("Stable",   0, 30, 8, key="icu_stbl_ngt")
+                    na3, na4 = st.columns(2)
+                    ngt_vent = na3.number_input("Vent", 0, 30, 2, key="icu_vent_ngt")
+                    ngt_ecmo = na4.number_input("ECMO", 0, 10, 0, key="icu_ecmo_ngt")
 
-                census_entries = []
-                cur = icu_start
-                while cur <= icu_end:
-                    census_entries.extend([
-                        ICUShiftCensus(
-                            date=cur, shift_slot=ShiftSlot.DAY,
-                            critical_patients=day_crit, stable_patients=day_stbl,
-                            vent_patients=day_vent, ecmo_patients=day_ecmo,
-                        ),
-                        ICUShiftCensus(
-                            date=cur, shift_slot=ShiftSlot.EVENING,
-                            critical_patients=eve_crit, stable_patients=eve_stbl,
-                            vent_patients=eve_vent, ecmo_patients=eve_ecmo,
-                        ),
-                        ICUShiftCensus(
-                            date=cur, shift_slot=ShiftSlot.NIGHT_12,
-                            critical_patients=ngt_crit, stable_patients=ngt_stbl,
-                            vent_patients=ngt_vent, ecmo_patients=ngt_ecmo,
-                        ),
-                    ])
-                    cur += timedelta(days=1)
+            day_rns = day_crit + _math.ceil(day_stbl / 2) if (day_crit + day_stbl) > 0 else 0
+            eve_rns = eve_crit + _math.ceil(eve_stbl / 2) if (eve_crit + eve_stbl) > 0 else 0
+            ngt_rns = ngt_crit + _math.ceil(ngt_stbl / 2) if (ngt_crit + ngt_stbl) > 0 else 0
 
-                icu_needs = ICUOperationalNeeds(
-                    unit=icu_unit,
-                    bed_capacity=int(icu_bed_cap),
-                    schedule_start=icu_start,
-                    schedule_end=icu_end,
-                    census_entries=census_entries,
-                    charge_each_shift=icu_charge,
-                    resource_nurse_needed=icu_resource,
-                    vent_specialist_needed=icu_vent_spec,
-                    ecmo_capable_needed=icu_ecmo_spec,
-                    crrt_capable_needed=icu_crrt_spec,
-                    notes=icu_notes,
-                )
+            rn1, rn2, rn3 = st.columns(3)
+            rn1.metric("Day RNs needed",   day_rns)
+            rn2.metric("Evening RNs needed", eve_rns)
+            rn3.metric("Night RNs needed", ngt_rns)
 
-                dept_needs = _icu_needs_to_department_needs(icu_needs)
+            xc1, xc2 = st.columns(2)
+            icu_charge  = xc1.checkbox("Charge nurse (day shift)", True, key="icu_charge")
+            icu_resource= xc2.checkbox("Resource nurse",          False, key="icu_resource")
+            xs1, xs2, xs3 = st.columns(3)
+            icu_vent_spec = xs1.checkbox("Vent specialist", bool(day_vent > 0), key="icu_vent_spec")
+            icu_ecmo_spec = xs2.checkbox("ECMO capable",   bool(day_ecmo > 0), key="icu_ecmo_spec")
+            icu_crrt_spec = xs3.checkbox("CRRT capable",   False,              key="icu_crrt_spec")
+            icu_notes = st.text_area("Clinical notes", key="icu_notes", height=56,
+                placeholder="e.g. post-cardiac surgery surge, 2 ECMO patients expected")
 
-                with st.spinner(f"Generating {int(icu_weeks)}-week ICU schedule for {icu_unit}…"):
-                    result, narrative = agent().generate_schedule_from_needs(dept_needs)
-
-                if result:
-                    st.session_state["icu_result"] = result
-                    st.session_state["icu_narrative"] = narrative
-                    st.session_state["icu_needs_obj"] = icu_needs
-                    st.success(
-                        f"ICU schedule generated: {len(result.schedule.assignments)} assignments"
+            if st.button("⚡ Generate ICU Schedule", type="primary",
+                         use_container_width=True, key="btn_icu_gen"):
+                if not st.session_state.api_key_set:
+                    st.error("API key required.")
+                elif day_rns == 0 and eve_rns == 0 and ngt_rns == 0:
+                    st.warning("Enter census data above.")
+                else:
+                    icu_end = icu_start + timedelta(weeks=int(icu_weeks)) - timedelta(days=1)
+                    census_entries = []
+                    cur = icu_start
+                    while cur <= icu_end:
+                        census_entries.extend([
+                            ICUShiftCensus(date=cur, shift_slot=ShiftSlot.DAY,
+                                critical_patients=day_crit, stable_patients=day_stbl,
+                                vent_patients=day_vent, ecmo_patients=day_ecmo),
+                            ICUShiftCensus(date=cur, shift_slot=ShiftSlot.EVENING,
+                                critical_patients=eve_crit, stable_patients=eve_stbl,
+                                vent_patients=eve_vent, ecmo_patients=eve_ecmo),
+                            ICUShiftCensus(date=cur, shift_slot=ShiftSlot.NIGHT_12,
+                                critical_patients=ngt_crit, stable_patients=ngt_stbl,
+                                vent_patients=ngt_vent, ecmo_patients=ngt_ecmo),
+                        ])
+                        cur += timedelta(days=1)
+                    icu_needs = ICUOperationalNeeds(
+                        unit=icu_unit, bed_capacity=int(icu_bed_cap),
+                        schedule_start=icu_start, schedule_end=icu_end,
+                        census_entries=census_entries,
+                        charge_each_shift=icu_charge, resource_nurse_needed=icu_resource,
+                        vent_specialist_needed=icu_vent_spec, ecmo_capable_needed=icu_ecmo_spec,
+                        crrt_capable_needed=icu_crrt_spec, notes=icu_notes,
                     )
-                    if result.coverage_gaps:
-                        st.warning(
-                            f"{len(result.coverage_gaps)} coverage gap(s) — review results panel"
-                        )
+                    dept_needs = _icu_needs_to_department_needs(icu_needs)
+                    with st.spinner(f"Generating {int(icu_weeks)}-week ICU schedule…"):
+                        result, narrative = agent().generate_schedule_from_needs(dept_needs)
+                    if result:
+                        st.session_state["icu_result"]    = result
+                        st.session_state["icu_narrative"] = narrative
+                        st.session_state["icu_needs_obj"] = icu_needs
+                        st.success(f"Generated {len(result.schedule.assignments)} assignments")
+                        st.rerun()
 
         if "icu_narrative" in st.session_state:
-            with st.expander("📄 Agent Summary", expanded=True):
+            with st.expander("📄 Agent Summary"):
                 st.markdown(st.session_state["icu_narrative"])
 
-    # ── Right column: Staffing Overview & Results ────────────────────────────
-    with icu_right:
-        st.subheader("ICU Staffing Overview")
-
-        if "icu_needs_obj" in st.session_state:
-            import pandas as pd
-            needs_obj: ICUOperationalNeeds = st.session_state["icu_needs_obj"]
-            icu_result = st.session_state.get("icu_result")
-
-            total_days = (needs_obj.schedule_end - needs_obj.schedule_start).days + 1
-            total_rn_shifts = sum(e.required_bedside_rns for e in needs_obj.census_entries)
-            avg_census = (
-                sum(e.total_census for e in needs_obj.census_entries)
-                / len(needs_obj.census_entries)
-                if needs_obj.census_entries else 0
+        # ── Calendar view ─────────────────────────────────────────────────
+        if schedule_generated:
+            st.markdown("---")
+            ctrl_l, _ = st.columns([2, 4])
+            cal_view = ctrl_l.radio(
+                "Calendar view", ["Monthly", "Weekly", "Daily"],
+                horizontal=True, key="icu_cal_view",
             )
 
-            m1, m2, m3 = st.columns(3)
-            m1.metric("Schedule days", total_days)
-            m2.metric("Total RN shifts", total_rn_shifts)
-            m3.metric("Avg census/shift", f"{avg_census:.1f}")
+            all_assigns = icu_result_d.schedule.assignments
 
-            st.markdown("**Daily requirements — first 7 days:**")
-            week1_entries = [
-                e for e in needs_obj.census_entries
-                if e.date <= needs_obj.schedule_start + timedelta(days=6)
-            ]
-            if week1_entries:
-                rows = []
-                for e in sorted(week1_entries, key=lambda x: (x.date, x.shift_slot.value)):
-                    rows.append({
-                        "Date": e.date.strftime("%a %b %d"),
-                        "Shift": e.shift_slot.value,
-                        "Critical": e.critical_patients,
-                        "Stable": e.stable_patients,
-                        "Vent": e.vent_patients,
-                        "ECMO": e.ecmo_patients,
-                        "RNs needed": e.required_bedside_rns,
-                        "Occupancy": f"{e.total_census}/{needs_obj.bed_capacity}",
-                    })
-                st.dataframe(pd.DataFrame(rows), use_container_width=True, height=280)
+            # ── Monthly ──────────────────────────────────────────────────
+            if cal_view == "Monthly":
+                months_ls, seen_m = [], set()
+                cur_m = date(needs_obj_d.schedule_start.year,
+                             needs_obj_d.schedule_start.month, 1)
+                while cur_m <= needs_obj_d.schedule_end:
+                    if cur_m not in seen_m:
+                        months_ls.append(cur_m)
+                        seen_m.add(cur_m)
+                    cur_m = (cur_m.replace(day=28) + timedelta(days=4)).replace(day=1)
 
-            if icu_result and icu_result.coverage_gaps:
-                st.markdown("### ⚠️ ICU Coverage Gaps")
-                for g in icu_result.coverage_gaps:
-                    st.markdown(
-                        f'<span class="gap-warning">• {g["date"]} {g["shift"]} — '
-                        f'short by {g["gap"]} {g["required_role"]}(s)</span>',
-                        unsafe_allow_html=True,
-                    )
-
-        else:
-            st.info("Fill in census data on the left and click **Generate ICU Schedule**.")
-
-            st.markdown("**ICU staffing ratios applied:**")
-            st.markdown(
-                """
-| Acuity | RN ratio | Notes |
-|---|---|---|
-| Critical (unstable) | 1:1 | 1 RN per patient |
-| Stable | 1:2 | 1 RN per 2 patients |
-| On ventilator | — | Vent-trained RN required |
-| On ECMO | — | ECMO-trained RN required |
-| On CRRT | — | CRRT-trained RN required |
-"""
-            )
-
-            st.markdown("**Tracked specialty skills:**")
-            for skill in [
-                "Mechanical Ventilation (vent)",
-                "ECMO (extracorporeal membrane oxygenation)",
-                "CRRT (continuous renal replacement therapy)",
-                "Charge nurse leadership",
-                "Resource / supervisory nurse",
-            ]:
-                st.markdown(f"- {skill}")
-
-    # ── Full-width calendar view (shown once schedule is generated) ──────────
-    if "icu_result" in st.session_state and "icu_needs_obj" in st.session_state:
-        import plotly.express as px
-        import calendar as _cal
-        from collections import defaultdict
-        from datetime import datetime as _dt
-
-        icu_result_fw = st.session_state["icu_result"]
-        needs_obj_fw: ICUOperationalNeeds = st.session_state["icu_needs_obj"]
-        all_assigns = icu_result_fw.schedule.assignments
-
-        if all_assigns:
-            st.divider()
-            st.subheader("Schedule Calendar View")
-
-            SHIFT_COLORS = {
-                "day":      "#3B82F6",
-                "evening":  "#F59E0B",
-                "night_12": "#6366F1",
-                "night_8":  "#8B5CF6",
-            }
-            SHIFT_LABELS = {
-                "day":      "Day  6:45a–3:15p",
-                "evening":  "Eve  2:45p–11:15p",
-                "night_12": "Night  6:45p–7:15a",
-                "night_8":  "Night  10:45p–7:15a",
-            }
-
-            nurse_map_fw = {n.id: n.name for n in storage.load_nurses()}
-
-            ctrl_col, _ = st.columns([2, 3])
-            with ctrl_col:
-                cal_view = st.radio(
-                    "View mode", ["Daily", "Weekly", "Monthly"],
-                    horizontal=True, key="icu_cal_view",
-                )
-
-            # ── Daily ────────────────────────────────────────────────────────
-            if cal_view == "Daily":
-                all_sched_dates = sorted({a.date for a in all_assigns})
-                pick_col, _ = st.columns([1, 3])
-                sel_day = pick_col.date_input(
-                    "Select date",
-                    value=all_sched_dates[0] if all_sched_dates else needs_obj_fw.schedule_start,
-                    min_value=needs_obj_fw.schedule_start,
-                    max_value=needs_obj_fw.schedule_end,
-                    key="icu_cal_day",
-                )
-                day_assigns = [a for a in all_assigns if a.date == sel_day]
-                if not day_assigns:
-                    st.info(f"No assignments on {sel_day}.")
+                if len(months_ls) > 1:
+                    pm, _ = st.columns([1, 4])
+                    sel_month = pm.selectbox("Month", months_ls,
+                        format_func=lambda m: m.strftime("%B %Y"), key="icu_cal_month")
                 else:
-                    gantt_rows = []
-                    for a in sorted(day_assigns, key=lambda x: x.shift_slot.value):
-                        start_t, end_t, hrs = SHIFT_TIMES[a.shift_slot]
-                        start_dt = _dt.combine(sel_day, start_t)
-                        end_dt = _dt.combine(
-                            sel_day + timedelta(days=1) if end_t < start_t else sel_day,
-                            end_t,
-                        )
-                        gantt_rows.append({
-                            "Nurse": nurse_map_fw.get(a.nurse_id, a.nurse_id),
-                            "Start": start_dt,
-                            "Finish": end_dt,
-                            "Shift": SHIFT_LABELS.get(a.shift_slot.value, a.shift_slot.value),
-                            "Hours": hrs,
-                            "Over Commit": "Yes" if a.is_over_commitment else "No",
-                        })
-                    fig = px.timeline(
-                        pd.DataFrame(gantt_rows),
-                        x_start="Start", x_end="Finish",
-                        y="Nurse", color="Shift",
-                        color_discrete_map={SHIFT_LABELS[k]: v for k, v in SHIFT_COLORS.items() if k in SHIFT_LABELS},
-                        hover_data=["Hours", "Over Commit"],
-                        title=sel_day.strftime("%A, %B %d %Y"),
-                    )
-                    fig.update_yaxes(autorange="reversed")
-                    fig.update_layout(
-                        height=max(420, len(gantt_rows) * 48 + 140),
-                        font=dict(size=14),
-                        margin=dict(l=10, r=10, t=50, b=10),
-                        legend_title_text="Shift",
-                    )
-                    st.plotly_chart(fig, use_container_width=True)
+                    sel_month = months_ls[0]
 
-                    tbl_rows = []
-                    for a in sorted(day_assigns, key=lambda x: x.shift_slot.value):
-                        _, _, hrs = SHIFT_TIMES[a.shift_slot]
-                        tbl_rows.append({
-                            "Nurse": nurse_map_fw.get(a.nurse_id, a.nurse_id),
-                            "Shift": SHIFT_LABELS.get(a.shift_slot.value, a.shift_slot.value),
-                            "Hrs": hrs,
-                            "Float": f"← {a.float_from_unit}" if a.is_float else "",
-                            "Over Commit": "⚠️" if a.is_over_commitment else "",
-                        })
-                    st.dataframe(pd.DataFrame(tbl_rows), use_container_width=True,
-                                 hide_index=True, height=min(500, len(tbl_rows) * 40 + 42))
+                by_date_m: dict = defaultdict(lambda: defaultdict(list))
+                target_by_date: dict = {}
+                for a in all_assigns:
+                    by_date_m[a.date][a.shift_slot.value].append(
+                        nurse_map_d.get(a.nurse_id, a.nurse_id))
+                for e in needs_obj_d.census_entries:
+                    if e.shift_slot == ShiftSlot.DAY:
+                        target_by_date[e.date] = e.required_bedside_rns
 
-            # ── Weekly ───────────────────────────────────────────────────────
+                weeks_grid = _cal.monthcalendar(sel_month.year, sel_month.month)
+                today_d = date.today()
+
+                wk_num = 0
+                html = f"""
+<h3 style="margin:0 0 14px;font-size:22px;font-weight:800;color:#0F172A">
+{sel_month.strftime('%B %Y')}</h3>
+<table class="fc-cal-full">
+<tr><th>Sun</th><th>Mon</th><th>Tue</th><th>Wed</th><th>Thu</th><th>Fri</th><th>Sat</th></tr>"""
+
+                # Reorder weeks to Sun-Sat
+                import calendar as _cal2
+                _cal2.setfirstweekday(6)
+                weeks_grid2 = _cal2.monthcalendar(sel_month.year, sel_month.month)
+
+                for week in weeks_grid2:
+                    has_sched = any(
+                        date(sel_month.year, sel_month.month, dn) in target_by_date
+                        for dn in week if dn > 0
+                    )
+                    if has_sched:
+                        wk_num += 1
+                    html += "<tr>"
+                    for dn in week:
+                        if dn == 0:
+                            html += '<td class="out"></td>'
+                        else:
+                            d = date(sel_month.year, sel_month.month, dn)
+                            in_r = needs_obj_d.schedule_start <= d <= needs_obj_d.schedule_end
+                            t_cls = " today" if d == today_d else ""
+                            html += f'<td><div class="fc-dn{t_cls}">{dn}</div>'
+                            if in_r and has_sched:
+                                html += f'<div class="fc-wk">W{wk_num}</div>'
+                            if in_r:
+                                day_count = len(by_date_m[d].get("day", []))
+                                ngt_count = len(by_date_m[d].get("night_12", []))
+                                tgt = target_by_date.get(d, day_rns)
+                                day_cls = "full" if day_count >= tgt else ("warn" if day_count >= tgt - 1 else "gap")
+                                ngt_cls = "full" if ngt_count >= tgt else ("warn" if ngt_count >= tgt - 1 else "gap")
+                                html += f'<div class="fc-cnt {day_cls}">☀ {day_count}/{tgt}</div>'
+                                html += f'<div class="fc-cnt {ngt_cls}">★ {ngt_count}/{tgt}</div>'
+                                for nm in by_date_m[d].get("day", [])[:2]:
+                                    html += f'<span class="s-day-f">{nm}</span>'
+                                extra = len(by_date_m[d].get("day", [])) - 2
+                                if extra > 0:
+                                    html += f'<span class="s-day-f">+{extra} more</span>'
+                            html += "</td>"
+                    html += "</tr>"
+
+                html += """</table>
+<div style="margin-top:12px;display:flex;gap:14px;font-size:12px;align-items:center">
+  <span style="background:#DBEAFE;color:#1E40AF;padding:3px 10px;border-radius:4px;font-weight:600">☀ Day 0700–1900</span>
+  <span style="background:#EDE9FE;color:#4C1D95;padding:3px 10px;border-radius:4px;font-weight:600">★ Night 1900–0700</span>
+  <span style="color:#16A34A;font-weight:700">● Filled</span>
+  <span style="color:#D97706;font-weight:700">● −1 from target</span>
+  <span style="color:#DC2626;font-weight:700">● Gap</span>
+</div>"""
+                st.markdown(html, unsafe_allow_html=True)
+
+            # ── Weekly ───────────────────────────────────────────────────
             elif cal_view == "Weekly":
                 seen_w, week_starts = set(), []
                 for d in sorted({a.date for a in all_assigns}):
@@ -1418,129 +1529,374 @@ with tab_icu:
                     if ws not in seen_w:
                         week_starts.append(ws)
                         seen_w.add(ws)
-
-                pick_col2, _ = st.columns([1, 3])
-                sel_week = pick_col2.selectbox(
-                    "Select week", week_starts,
+                pw, _ = st.columns([1, 3])
+                sel_week = pw.selectbox("Week", week_starts,
                     format_func=lambda w: f"Week of {w.strftime('%b %d, %Y')}",
-                    key="icu_cal_week",
-                )
-                week_days = [sel_week + timedelta(days=i) for i in range(7)]
-                week_assigns = [a for a in all_assigns if sel_week <= a.date <= sel_week + timedelta(days=6)]
-
+                    key="icu_cal_week")
+                week_days  = [sel_week + timedelta(days=i) for i in range(7)]
+                week_asgn  = [a for a in all_assigns if sel_week <= a.date <= sel_week + timedelta(days=6)]
                 shift_order = ["day", "evening", "night_12"]
-                pivot_rows = []
+
+                pivot = []
                 for slot in shift_order:
                     row = {"Shift": SHIFT_LABELS.get(slot, slot)}
                     for d in week_days:
-                        names = [nurse_map_fw.get(a.nurse_id, a.nurse_id)
-                                 for a in week_assigns if a.date == d and a.shift_slot.value == slot]
+                        names = [nurse_map_d.get(a.nurse_id, a.nurse_id)
+                                 for a in week_asgn if a.date == d and a.shift_slot.value == slot]
                         row[d.strftime("%a %-d")] = ", ".join(names) if names else "—"
-                    pivot_rows.append(row)
+                    pivot.append(row)
+                st.dataframe(pd.DataFrame(pivot).set_index("Shift"),
+                             use_container_width=True, height=160)
 
-                st.dataframe(pd.DataFrame(pivot_rows).set_index("Shift"),
-                             use_container_width=True, height=180)
-
-                st.markdown("**Day-by-day breakdown:**")
-                day_cols = st.columns(7)
+                dcols = st.columns(7)
+                bg_map  = {"day": "#DBEAFE", "evening": "#FEF3C7", "night_12": "#EDE9FE"}
+                fg_map  = {"day": "#1E40AF", "evening": "#92400E", "night_12": "#4C1D95"}
+                ico_map = {"day": "☀", "evening": "🌙", "night_12": "★"}
                 for i, d in enumerate(week_days):
-                    day_a = [a for a in week_assigns if a.date == d]
-                    with day_cols[i]:
+                    day_a = [a for a in week_asgn if a.date == d]
+                    with dcols[i]:
                         st.markdown(
-                            f"<div style='text-align:center;background:#1E293B;color:#fff;"
+                            f"<div style='text-align:center;background:#0F172A;color:#fff;"
                             f"border-radius:8px;padding:6px 2px;margin-bottom:6px'>"
-                            f"<b>{d.strftime('%a')}</b><br>"
-                            f"<span style='font-size:22px;font-weight:900'>{d.strftime('%-d')}</span>"
-                            f"</div>",
-                            unsafe_allow_html=True,
-                        )
+                            f"<b style='font-size:11px'>{d.strftime('%A')}</b><br>"
+                            f"<span style='font-size:20px;font-weight:900'>{d.strftime('%-d')}</span>"
+                            f"</div>", unsafe_allow_html=True)
                         for slot in shift_order:
-                            nurses_on = [nurse_map_fw.get(a.nurse_id, a.nurse_id)
+                            nurses_on = [nurse_map_d.get(a.nurse_id, a.nurse_id)
                                          for a in day_a if a.shift_slot.value == slot]
-                            bg = {"day": "#DBEAFE", "evening": "#FEF3C7", "night_12": "#EDE9FE"}[slot]
-                            fg = {"day": "#1E40AF", "evening": "#92400E", "night_12": "#4C1D95"}[slot]
-                            icon = {"day": "☀", "evening": "🌙", "night_12": "★"}[slot]
+                            tgt = day_rns if slot == "day" else (eve_rns if slot == "evening" else ngt_rns)
+                            cnt_color = "#16A34A" if len(nurses_on) >= tgt else "#DC2626"
+                            st.markdown(
+                                f"<div style='font-size:11px;font-weight:700;color:{cnt_color};"
+                                f"margin:3px 0 1px'>{ico_map[slot]} {len(nurses_on)}/{tgt}</div>",
+                                unsafe_allow_html=True)
                             for nm in nurses_on:
                                 st.markdown(
-                                    f"<div style='background:{bg};color:{fg};border-radius:4px;"
-                                    f"padding:3px 6px;margin:2px 0;font-size:12px'>"
-                                    f"{icon} {nm}</div>",
-                                    unsafe_allow_html=True,
-                                )
-                            if not nurses_on:
-                                st.markdown(
-                                    f"<div style='color:#CBD5E1;font-size:11px;padding:2px 4px'>"
-                                    f"{icon} —</div>",
-                                    unsafe_allow_html=True,
-                                )
+                                    f"<div style='background:{bg_map[slot]};color:{fg_map[slot]};"
+                                    f"border-radius:3px;padding:2px 5px;margin:1px 0;font-size:11px;"
+                                    f"overflow:hidden;text-overflow:ellipsis;white-space:nowrap'>"
+                                    f"{nm}</div>", unsafe_allow_html=True)
 
-            # ── Monthly ──────────────────────────────────────────────────────
-            elif cal_view == "Monthly":
-                months_in_sched, seen_m = [], set()
-                cur_m = date(needs_obj_fw.schedule_start.year, needs_obj_fw.schedule_start.month, 1)
-                while cur_m <= needs_obj_fw.schedule_end:
-                    if cur_m not in seen_m:
-                        months_in_sched.append(cur_m)
-                        seen_m.add(cur_m)
-                    cur_m = (cur_m.replace(day=28) + timedelta(days=4)).replace(day=1)
-
-                if len(months_in_sched) > 1:
-                    pick_col3, _ = st.columns([1, 3])
-                    sel_month = pick_col3.selectbox(
-                        "Select month", months_in_sched,
-                        format_func=lambda m: m.strftime("%B %Y"),
-                        key="icu_cal_month",
-                    )
+            # ── Daily ────────────────────────────────────────────────────
+            elif cal_view == "Daily":
+                all_sched_dates = sorted({a.date for a in all_assigns})
+                pd_col, _ = st.columns([1, 4])
+                sel_day = pd_col.date_input("Date",
+                    value=all_sched_dates[0] if all_sched_dates else needs_obj_d.schedule_start,
+                    min_value=needs_obj_d.schedule_start,
+                    max_value=needs_obj_d.schedule_end,
+                    key="icu_cal_day")
+                day_asgn = [a for a in all_assigns if a.date == sel_day]
+                if not day_asgn:
+                    st.info(f"No assignments on {sel_day}.")
                 else:
-                    sel_month = months_in_sched[0]
+                    gantt = []
+                    for a in sorted(day_asgn, key=lambda x: x.shift_slot.value):
+                        s_t, e_t, hrs = SHIFT_TIMES[a.shift_slot]
+                        gantt.append({
+                            "Nurse": nurse_map_d.get(a.nurse_id, a.nurse_id),
+                            "Start": _dt.combine(sel_day, s_t),
+                            "Finish": _dt.combine(
+                                sel_day + timedelta(days=1) if e_t < s_t else sel_day, e_t),
+                            "Shift": SHIFT_LABELS.get(a.shift_slot.value, a.shift_slot.value),
+                            "Hours": hrs,
+                            "Over Commit": "Yes" if a.is_over_commitment else "No",
+                        })
+                    fig = px.timeline(pd.DataFrame(gantt),
+                        x_start="Start", x_end="Finish", y="Nurse", color="Shift",
+                        color_discrete_map={SHIFT_LABELS[k]: v for k, v in SHIFT_COLORS.items()
+                                            if k in SHIFT_LABELS},
+                        hover_data=["Hours", "Over Commit"],
+                        title=sel_day.strftime("%A, %B %-d %Y"))
+                    fig.update_yaxes(autorange="reversed")
+                    fig.update_layout(height=max(420, len(gantt) * 48 + 140),
+                        font=dict(size=14), margin=dict(l=10, r=10, t=50, b=10))
+                    st.plotly_chart(fig, use_container_width=True)
 
-                by_date_fw: dict = defaultdict(lambda: defaultdict(list))
-                for a in all_assigns:
-                    by_date_fw[a.date][a.shift_slot.value].append(
-                        nurse_map_fw.get(a.nurse_id, a.nurse_id)
-                    )
+                    tbl = [{"Nurse": nurse_map_d.get(a.nurse_id, a.nurse_id),
+                            "Shift": SHIFT_LABELS.get(a.shift_slot.value, a.shift_slot.value),
+                            "Hrs": SHIFT_TIMES[a.shift_slot][2],
+                            "Float": f"← {a.float_from_unit}" if a.is_float else "",
+                            "Over Commit": "⚠️" if a.is_over_commitment else ""}
+                           for a in sorted(day_asgn, key=lambda x: x.shift_slot.value)]
+                    st.dataframe(pd.DataFrame(tbl), use_container_width=True,
+                                 hide_index=True, height=min(500, len(tbl) * 40 + 42))
+        else:
+            st.info("Configure census above and click **Generate ICU Schedule** to see the calendar.")
 
-                weeks_grid = _cal.monthcalendar(sel_month.year, sel_month.month)
-                today = date.today()
-                html = f"""
-<style>
-.icu-cal-full{{width:100%;border-collapse:collapse;font-size:13px;font-family:'Inter',sans-serif;table-layout:fixed}}
-.icu-cal-full th{{background:#1E293B;color:#fff;padding:12px 8px;text-align:center;font-weight:700;font-size:14px}}
-.icu-cal-full td{{border:1px solid #E2E8F0;padding:8px;vertical-align:top;height:130px;width:14.28%}}
-.icu-cal-full td.out{{background:#F8FAFC}}
-.icu-cal-full .dn{{font-weight:800;color:#334155;margin-bottom:6px;font-size:16px}}
-.icu-cal-full .dn.today{{color:#2563EB;background:#EFF6FF;width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center}}
-.s-day-f{{background:#DBEAFE;color:#1E40AF;border-radius:4px;padding:3px 7px;margin:2px 0;display:block;font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}}
-.s-eve-f{{background:#FEF3C7;color:#92400E;border-radius:4px;padding:3px 7px;margin:2px 0;display:block;font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}}
-.s-ngt-f{{background:#EDE9FE;color:#4C1D95;border-radius:4px;padding:3px 7px;margin:2px 0;display:block;font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}}
-</style>
-<h3 style="margin:0 0 12px;font-size:22px;font-weight:800;color:#1E293B">{sel_month.strftime('%B %Y')}</h3>
-<table class="icu-cal-full">
-<tr><th>Monday</th><th>Tuesday</th><th>Wednesday</th><th>Thursday</th><th>Friday</th><th>Saturday</th><th>Sunday</th></tr>
-"""
-                for week in weeks_grid:
-                    html += "<tr>"
-                    for dn in week:
-                        if dn == 0:
-                            html += '<td class="out"></td>'
-                        else:
-                            d = date(sel_month.year, sel_month.month, dn)
-                            in_range = needs_obj_fw.schedule_start <= d <= needs_obj_fw.schedule_end
-                            today_cls = " today" if d == today else ""
-                            html += f'<td><div class="dn{today_cls}">{dn}</div>'
-                            if in_range:
-                                for nm in by_date_fw[d].get("day", []):
-                                    html += f'<span class="s-day-f">☀ {nm}</span>'
-                                for nm in by_date_fw[d].get("evening", []):
-                                    html += f'<span class="s-eve-f">🌙 {nm}</span>'
-                                for nm in by_date_fw[d].get("night_12", []):
-                                    html += f'<span class="s-ngt-f">★ {nm}</span>'
-                            html += "</td>"
-                    html += "</tr>"
-                html += """</table>
-<div style="margin-top:12px;display:flex;gap:16px;font-size:13px">
-  <span style="background:#DBEAFE;color:#1E40AF;padding:4px 12px;border-radius:4px;font-weight:600">☀ Day  6:45a–3:15p</span>
-  <span style="background:#FEF3C7;color:#92400E;padding:4px 12px;border-radius:4px;font-weight:600">🌙 Eve  2:45p–11:15p</span>
-  <span style="background:#EDE9FE;color:#4C1D95;padding:4px 12px;border-radius:4px;font-weight:600">★ Night  6:45p–7:15a</span>
-</div>"""
-                st.markdown(html, unsafe_allow_html=True)
+    # ════════════════════════════════════════════════════════════════════════
+    # SUB-TAB 2 — ROSTER
+    # ════════════════════════════════════════════════════════════════════════
+    with sub_tabs[1]:
+        st.subheader(f"{active_unit} Roster")
+        rows = []
+        for n in sorted(all_nurses_icu, key=lambda x: x.seniority_years, reverse=True):
+            rows.append({
+                "ID": n.id, "Name": n.name,
+                "Role": n.role.value, "Type": n.employee_type.value,
+                "FTE": n.fte, "Shift": n.shift_type.value,
+                "Seniority": f"{n.seniority_years:.1f} yr",
+                "Charge": "✓" if n.can_charge else "",
+                "Resource": "✓" if n.can_resource else "",
+                "Specialties": ", ".join(n.specialties) or "—",
+                "PTO Hrs": f"{n.pto_hours_balance:.0f}",
+            })
+        st.dataframe(pd.DataFrame(rows), use_container_width=True, height=500, hide_index=True)
+        st.caption(f"{len(rows)} nurses · {charge_n} charge-eligible · "
+                   f"{sum(1 for n in all_nurses_icu if n.can_resource)} resource-eligible")
+
+    # ════════════════════════════════════════════════════════════════════════
+    # SUB-TAB 3 — REQUESTS (all pending)
+    # ════════════════════════════════════════════════════════════════════════
+    with sub_tabs[2]:
+        st.subheader("Pending Requests")
+        all_tor = storage.load_time_off_requests()
+        all_swp = storage.load_swap_requests()
+        pending_tor = [r for r in all_tor if r.status.value == "pending"]
+        pending_swp = [s for s in all_swp if s.status.value == "pending"]
+        st.caption(f"{len(pending_tor)} time-off · {len(pending_swp)} swap requests pending")
+
+        if not pending_tor and not pending_swp:
+            st.success("No pending requests.")
+        for r in sorted(pending_tor, key=lambda x: x.submitted_at, reverse=True):
+            date_str = (f"{min(r.dates)} – {max(r.dates)}"
+                        if len(r.dates) > 1 else str(r.dates[0]))
+            nurse_obj2 = next((n for n in all_nurses_icu if n.id == r.nurse_id), None)
+            blocks2, warns2, info2 = (
+                _check_request_eligibility(r, nurse_obj2, all_tor, all_nurses_icu)
+                if nurse_obj2 else (["Nurse not found"], [], [])
+            )
+            eligible2 = len(blocks2) == 0
+            badge2 = "✅ Eligible" if eligible2 else "❌ Blocked"
+            color2 = "green" if eligible2 else "red"
+            with st.expander(
+                f"🟡 {nurse_map_d.get(r.nurse_id, r.nurse_id)} — "
+                f"{r.request_type.value.replace('_',' ').title()} — {date_str}", expanded=False
+            ):
+                st.write(f"**Submitted:** {r.submitted_at.strftime('%Y-%m-%d %H:%M')}")
+                if r.education_activity:
+                    st.write(f"**Activity:** {r.education_activity}")
+                st.markdown(f"**Eligibility:** :{color2}[{badge2}]")
+                for b in blocks2: st.error(f"🚫 {b}")
+                for w in warns2:  st.warning(f"⚠️ {w}")
+                if info2:
+                    with st.expander("Details"): [st.markdown(f"- {i}") for i in info2]
+                note = st.text_input("Note", key=f"r2_note_{r.id}",
+                                     placeholder="Optional reason…")
+                ca, cd = st.columns(2)
+                if ca.button("✅ Approve", key=f"r2_app_{r.id}", use_container_width=True,
+                             type="primary" if eligible2 else "secondary"):
+                    r.status = RequestStatus.APPROVED
+                    r.decided_at = datetime.now()
+                    r.decision_reason = note or "Approved by manager."
+                    storage.save_time_off_request(r)
+                    st.rerun()
+                if cd.button("❌ Decline", key=f"r2_dec_{r.id}", use_container_width=True):
+                    r.status = RequestStatus.DENIED
+                    r.decided_at = datetime.now()
+                    r.decision_reason = note or "Declined by manager."
+                    storage.save_time_off_request(r)
+                    st.rerun()
+
+    # ════════════════════════════════════════════════════════════════════════
+    # SUB-TAB 4 — TIME OFF
+    # ════════════════════════════════════════════════════════════════════════
+    with sub_tabs[3]:
+        st.subheader("Time Off Requests")
+        all_tor2 = storage.load_time_off_requests()
+        tf1, tf2 = st.columns(2)
+        tf_nurse = tf1.selectbox("Filter nurse", ["All"] + list(nurse_map_d.values()),
+                                  key="tf_nurse")
+        tf_status = tf2.selectbox("Status", ["All", "pending", "approved", "denied"],
+                                   key="tf_status")
+        filtered_tor = all_tor2
+        if tf_nurse != "All":
+            nid2 = next((k for k, v in nurse_map_d.items() if v == tf_nurse), None)
+            if nid2: filtered_tor = [r for r in filtered_tor if r.nurse_id == nid2]
+        if tf_status != "All":
+            filtered_tor = [r for r in filtered_tor if r.status.value == tf_status]
+        filtered_tor = sorted(filtered_tor, key=lambda r: r.submitted_at, reverse=True)
+        if not filtered_tor:
+            st.info("No requests found.")
+        else:
+            trows = []
+            for r in filtered_tor:
+                date_str2 = (f"{min(r.dates)} – {max(r.dates)}"
+                             if len(r.dates) > 1 else str(r.dates[0]))
+                icon = {"approved": "🟢", "denied": "🔴", "pending": "🟡"}.get(r.status.value, "⚪")
+                trows.append({
+                    "": icon,
+                    "Nurse": nurse_map_d.get(r.nurse_id, r.nurse_id),
+                    "Type": r.request_type.value.replace("_", " ").title(),
+                    "Date(s)": date_str2,
+                    "Status": r.status.value,
+                    "Submitted": r.submitted_at.strftime("%Y-%m-%d"),
+                    "Decision": r.decision_reason[:60] if r.decision_reason else "",
+                })
+            st.dataframe(pd.DataFrame(trows), use_container_width=True,
+                         height=min(600, len(trows) * 38 + 42), hide_index=True)
+
+    # ════════════════════════════════════════════════════════════════════════
+    # SUB-TAB 5 — SWAPS
+    # ════════════════════════════════════════════════════════════════════════
+    with sub_tabs[4]:
+        st.subheader("Shift Swaps")
+        all_swp2 = storage.load_swap_requests()
+        sw_status = st.selectbox("Status", ["All", "pending", "approved", "denied"],
+                                  key="sw_status")
+        filtered_swp = all_swp2 if sw_status == "All" else \
+            [s for s in all_swp2 if s.status.value == sw_status]
+        if not filtered_swp:
+            st.info("No swap requests found.")
+        else:
+            srows = []
+            for s in sorted(filtered_swp, key=lambda x: x.submitted_at, reverse=True):
+                icon = {"approved": "🟢", "denied": "🔴", "pending": "🟡"}.get(s.status.value, "⚪")
+                srows.append({
+                    "": icon,
+                    "Requesting": nurse_map_d.get(s.requesting_nurse_id, s.requesting_nurse_id),
+                    "Accepting": nurse_map_d.get(s.accepting_nurse_id, "—") if s.accepting_nurse_id else "—",
+                    "Trade Date": str(s.trade_date),
+                    "Shift A": s.original_shift_id,
+                    "Shift B": s.swap_shift_id or "—",
+                    "Status": s.status.value,
+                    "Manager Approved": "✓" if s.manager_approved else "",
+                })
+            st.dataframe(pd.DataFrame(srows), use_container_width=True,
+                         height=min(600, len(srows) * 38 + 42), hide_index=True)
+
+            st.subheader("Approve / Decline Pending Swaps")
+            pending_swp2 = [s for s in all_swp2 if s.status.value == "pending"]
+            if not pending_swp2:
+                st.success("No pending swaps.")
+            for s in pending_swp2:
+                req_nm = nurse_map_d.get(s.requesting_nurse_id, s.requesting_nurse_id)
+                acc_nm = nurse_map_d.get(s.accepting_nurse_id, "—") if s.accepting_nurse_id else "—"
+                sb2, sw2, si2 = _check_swap_eligibility(s, all_nurses_icu,
+                                                         storage.load_time_off_requests())
+                s_ok = len(sb2) == 0
+                with st.expander(f"🟡 {req_nm} ↔ {acc_nm} — {s.trade_date}", expanded=True):
+                    st.write(f"**Shift A:** {s.original_shift_id}  |  **Shift B:** {s.swap_shift_id}")
+                    st.markdown(f"**Eligibility:** :{'green' if s_ok else 'red'}[{'✅ Eligible' if s_ok else '❌ Blocked'}]")
+                    for b in sb2: st.error(f"🚫 {b}")
+                    for w in sw2: st.warning(f"⚠️ {w}")
+                    if si2:
+                        with st.expander("Details"): [st.markdown(f"- i") for i in si2]
+                    sn, sd_ = st.columns(2)
+                    if sn.button("✅ Approve", key=f"sw_app_{s.id}", use_container_width=True,
+                                 type="primary" if s_ok else "secondary"):
+                        s.status = RequestStatus.APPROVED
+                        s.manager_approved = True
+                        storage.save_swap_request(s)
+                        st.rerun()
+                    if sd_.button("❌ Decline", key=f"sw_dec_{s.id}", use_container_width=True):
+                        s.status = RequestStatus.DENIED
+                        storage.save_swap_request(s)
+                        st.rerun()
+
+    # ════════════════════════════════════════════════════════════════════════
+    # SUB-TAB 6 — COVERAGE
+    # ════════════════════════════════════════════════════════════════════════
+    with sub_tabs[5]:
+        st.subheader("Coverage Analysis")
+        if not schedule_generated:
+            st.info("Generate a schedule in Schedule Builder to see coverage analysis.")
+        else:
+            cov_data = []
+            by_date_cov: dict = defaultdict(lambda: defaultdict(int))
+            for a in icu_result_d.schedule.assignments:
+                by_date_cov[a.date][a.shift_slot.value] += 1
+            for e in needs_obj_d.census_entries:
+                tgt = e.required_bedside_rns
+                actual = by_date_cov[e.date].get(e.shift_slot.value, 0)
+                cov_data.append({
+                    "Date": e.date, "Shift": e.shift_slot.value,
+                    "Target": tgt, "Actual": actual,
+                    "Gap": max(0, tgt - actual),
+                    "Status": "Filled" if actual >= tgt else ("−1" if actual == tgt - 1 else "Gap"),
+                })
+            df_cov = pd.DataFrame(cov_data)
+            total_r = len(df_cov)
+            filled_r = (df_cov["Gap"] == 0).sum()
+            gap_r = (df_cov["Gap"] > 0).sum()
+            cv1, cv2, cv3 = st.columns(3)
+            cv1.metric("Total shift-slots", total_r)
+            cv2.metric("Fully filled", filled_r, f"{round(filled_r/total_r*100)}%")
+            cv3.metric("Gaps", gap_r)
+
+            fig_cov = px.bar(df_cov, x="Date", y=["Actual", "Target"],
+                barmode="overlay", color_discrete_map={"Actual": "#3B82F6", "Target": "#E2E8F0"},
+                facet_row="Shift", height=500,
+                title="Actual vs Target Staffing by Day")
+            fig_cov.update_layout(margin=dict(l=0, r=0, t=50, b=0))
+            st.plotly_chart(fig_cov, use_container_width=True)
+
+            st.dataframe(df_cov.sort_values(["Date", "Shift"]),
+                         use_container_width=True, height=300, hide_index=True)
+
+    # ════════════════════════════════════════════════════════════════════════
+    # SUB-TAB 7 — WELLNESS
+    # ════════════════════════════════════════════════════════════════════════
+    with sub_tabs[6]:
+        st.subheader("Staff Wellness & Engagement")
+        wl1, wl2 = st.columns(2)
+        with wl1:
+            cat_w = st.selectbox("Leaderboard",
+                ["total_points","no_call_outs","shifts_picked_up","swaps_completed","avg_shift_rating"],
+                format_func=lambda x: x.replace("_"," ").title(), key="wl_cat")
+            if st.session_state.api_key_set:
+                board = agent().get_leaderboard(cat_w, top_n=10)
+                medals = ["🥇","🥈","🥉"]
+                for entry in board:
+                    r = entry["rank"]
+                    med = medals[r-1] if r <= 3 else f"#{r}"
+                    vals = " · ".join(f"**{entry[k]}**" for k in entry if k not in ("rank","name"))
+                    st.markdown(f"{med} **{entry['name']}** — {vals}")
+        with wl2:
+            wl_nurse = st.selectbox("Nurse profile",
+                list(nurse_map_d.values()), key="wl_nurse")
+            wl_id = next((k for k, v in nurse_map_d.items() if v == wl_nurse), None)
+            if wl_id and st.session_state.api_key_set:
+                prof = agent().get_nurse_gamification_profile(wl_id)
+                if prof:
+                    p1,p2,p3,p4 = st.columns(4)
+                    p1.metric("Points",    prof["total_points"])
+                    p2.metric("Streak",    f"{prof['current_streak_days']}d")
+                    p3.metric("No-callouts", prof["no_call_outs"])
+                    p4.metric("Avg rating", f"{prof['avg_shift_rating']}⭐")
+                    if prof["badges"]:
+                        st.markdown(" ".join(
+                            f'<span style="background:#FEF3C7;color:#92400E;padding:3px 10px;'
+                            f'border-radius:100px;font-size:12px;font-weight:600">'
+                            f'{b["icon"]} {b["name"]}</span>'
+                            for b in prof["badges"]
+                        ), unsafe_allow_html=True)
+
+    # ════════════════════════════════════════════════════════════════════════
+    # SUB-TAB 8 — POLICY ASSISTANT
+    # ════════════════════════════════════════════════════════════════════════
+    with sub_tabs[7]:
+        st.subheader("Policy Assistant")
+        st.caption("Ask any SHC/CRONA policy question in plain English.")
+        if "policy_msgs" not in st.session_state:
+            st.session_state["policy_msgs"] = []
+        for msg in st.session_state["policy_msgs"]:
+            icon = "👤" if msg["role"] == "user" else "📖"
+            bg   = "#EFF6FF" if msg["role"] == "user" else "#F0FDF4"
+            st.markdown(
+                f'<div style="background:{bg};border-radius:10px;padding:10px 14px;'
+                f'margin:4px 0">{icon} {msg["content"]}</div>',
+                unsafe_allow_html=True)
+        pol_input = st.chat_input("Ask a policy question…", key="pol_input")
+        if pol_input:
+            st.session_state["policy_msgs"].append({"role":"user","content":pol_input})
+            if st.session_state.api_key_set:
+                with st.spinner("Consulting policy…"):
+                    ans = agent().answer_policy_question(pol_input, {
+                        "unit": active_unit, "today": date.today().isoformat()})
+                st.session_state["policy_msgs"].append({"role":"assistant","content":ans})
+            st.rerun()
+        if st.session_state["policy_msgs"]:
+            if st.button("🗑 Clear", key="pol_clear"):
+                st.session_state["policy_msgs"] = []
+                st.rerun()
