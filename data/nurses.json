@@ -11,10 +11,11 @@
     "hire_date": "2015-03-10",
     "adjusted_hire_date": null,
     "specialties": [
-      "oncology",
-      "telemetry"
+      "critical_care",
+      "vent"
     ],
     "float_regions": [
+      "ICU",
       "K5",
       "K6",
       "K7"
@@ -52,10 +53,12 @@
     "hire_date": "2010-06-15",
     "adjusted_hire_date": null,
     "specialties": [
-      "oncology",
-      "critical_care"
+      "critical_care",
+      "vent",
+      "ecmo"
     ],
     "float_regions": [
+      "ICU",
       "K5",
       "K6",
       "K7",
@@ -95,9 +98,11 @@
     "hire_date": "2019-01-22",
     "adjusted_hire_date": null,
     "specialties": [
-      "telemetry"
+      "critical_care",
+      "vent"
     ],
     "float_regions": [
+      "ICU",
       "K5",
       "K7"
     ],
@@ -133,9 +138,11 @@
     "hire_date": "2017-08-05",
     "adjusted_hire_date": null,
     "specialties": [
-      "med_surg"
+      "critical_care",
+      "crrt"
     ],
     "float_regions": [
+      "ICU",
       "K5",
       "K6"
     ],
@@ -171,11 +178,13 @@
     "hire_date": "2005-11-12",
     "adjusted_hire_date": null,
     "specialties": [
-      "oncology",
-      "telemetry",
-      "critical_care"
+      "critical_care",
+      "vent",
+      "ecmo",
+      "crrt"
     ],
     "float_regions": [
+      "ICU",
       "K5",
       "K6",
       "K7",
@@ -216,9 +225,10 @@
     "hire_date": "2022-05-01",
     "adjusted_hire_date": null,
     "specialties": [
-      "med_surg"
+      "critical_care"
     ],
     "float_regions": [
+      "ICU",
       "K5",
       "K6",
       "K7"
@@ -253,10 +263,11 @@
     "hire_date": "2020-09-14",
     "adjusted_hire_date": null,
     "specialties": [
-      "telemetry",
-      "med_surg"
+      "critical_care",
+      "vent"
     ],
     "float_regions": [
+      "ICU",
       "K5",
       "K6"
     ],
@@ -292,9 +303,11 @@
     "hire_date": "2013-04-20",
     "adjusted_hire_date": null,
     "specialties": [
-      "oncology"
+      "critical_care",
+      "ecmo"
     ],
     "float_regions": [
+      "ICU",
       "K5",
       "K7"
     ],
@@ -331,10 +344,10 @@
     "hire_date": "2026-02-01",
     "adjusted_hire_date": null,
     "specialties": [
-      "med_surg",
-      "telemetry"
+      "critical_care"
     ],
     "float_regions": [
+      "ICU",
       "K5",
       "K6"
     ],
@@ -368,9 +381,11 @@
     "hire_date": "2021-03-08",
     "adjusted_hire_date": null,
     "specialties": [
-      "telemetry"
+      "critical_care",
+      "vent"
     ],
     "float_regions": [
+      "ICU",
       "K5",
       "K6",
       "K7"
@@ -408,9 +423,11 @@
     "adjusted_hire_date": null,
     "specialties": [
       "critical_care",
-      "telemetry"
+      "vent",
+      "ecmo"
     ],
     "float_regions": [
+      "ICU",
       "K5",
       "K6"
     ],
@@ -446,10 +463,11 @@
     "hire_date": "2019-05-10",
     "adjusted_hire_date": null,
     "specialties": [
-      "oncology",
-      "telemetry"
+      "critical_care",
+      "crrt"
     ],
     "float_regions": [
+      "ICU",
       "K5",
       "K6"
     ],
@@ -485,10 +503,11 @@
     "hire_date": "2020-02-18",
     "adjusted_hire_date": null,
     "specialties": [
-      "telemetry",
-      "med_surg"
+      "critical_care",
+      "vent"
     ],
     "float_regions": [
+      "ICU",
       "K5",
       "K6"
     ],
@@ -524,9 +543,10 @@
     "hire_date": "2023-02-20",
     "adjusted_hire_date": null,
     "specialties": [
-      "med_surg"
+      "critical_care"
     ],
     "float_regions": [
+      "ICU",
       "K5",
       "K6"
     ],
@@ -562,10 +582,12 @@
     "hire_date": "2018-11-05",
     "adjusted_hire_date": null,
     "specialties": [
-      "oncology",
-      "critical_care"
+      "critical_care",
+      "vent",
+      "ecmo"
     ],
     "float_regions": [
+      "ICU",
       "K5",
       "K6"
     ],
@@ -601,9 +623,11 @@
     "hire_date": "2022-08-15",
     "adjusted_hire_date": null,
     "specialties": [
-      "telemetry"
+      "critical_care",
+      "crrt"
     ],
     "float_regions": [
+      "ICU",
       "K5",
       "K6"
     ],
@@ -640,10 +664,12 @@
     "adjusted_hire_date": null,
     "specialties": [
       "critical_care",
-      "oncology",
-      "telemetry"
+      "vent",
+      "ecmo",
+      "crrt"
     ],
     "float_regions": [
+      "ICU",
       "K5",
       "K6"
     ],
@@ -679,9 +705,10 @@
     "hire_date": "2024-01-08",
     "adjusted_hire_date": null,
     "specialties": [
-      "med_surg"
+      "critical_care"
     ],
     "float_regions": [
+      "ICU",
       "K5",
       "K6"
     ],
@@ -718,9 +745,10 @@
     "adjusted_hire_date": null,
     "specialties": [
       "critical_care",
-      "telemetry"
+      "vent"
     ],
     "float_regions": [
+      "ICU",
       "K5",
       "K6"
     ],
@@ -756,10 +784,11 @@
     "hire_date": "2019-04-12",
     "adjusted_hire_date": null,
     "specialties": [
-      "oncology",
-      "med_surg"
+      "critical_care",
+      "ecmo"
     ],
     "float_regions": [
+      "ICU",
       "K5",
       "K6"
     ],
@@ -795,9 +824,10 @@
     "hire_date": "2023-07-17",
     "adjusted_hire_date": null,
     "specialties": [
-      "med_surg"
+      "critical_care"
     ],
     "float_regions": [
+      "ICU",
       "K5",
       "K6"
     ],
@@ -833,10 +863,11 @@
     "hire_date": "2022-01-10",
     "adjusted_hire_date": null,
     "specialties": [
-      "telemetry",
-      "oncology"
+      "critical_care",
+      "vent"
     ],
     "float_regions": [
+      "ICU",
       "K5",
       "K6"
     ],
@@ -872,10 +903,12 @@
     "hire_date": "2020-09-22",
     "adjusted_hire_date": null,
     "specialties": [
-      "oncology",
-      "critical_care"
+      "critical_care",
+      "vent",
+      "ecmo"
     ],
     "float_regions": [
+      "ICU",
       "K5",
       "K6"
     ],
@@ -911,10 +944,11 @@
     "hire_date": "2021-06-15",
     "adjusted_hire_date": null,
     "specialties": [
-      "telemetry",
-      "med_surg"
+      "critical_care",
+      "crrt"
     ],
     "float_regions": [
+      "ICU",
       "K5",
       "K6"
     ],

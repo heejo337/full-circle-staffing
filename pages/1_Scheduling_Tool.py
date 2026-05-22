@@ -1342,8 +1342,8 @@ with tab_icu:
         icu_charge  = xc1.checkbox("Charge nurse (day shift)", True, key="icu_charge")
         icu_resource= xc2.checkbox("Resource nurse",          False, key="icu_resource")
         xs1, xs2, xs3 = st.columns(3)
-        icu_vent_spec = xs1.checkbox("Vent specialist", bool(day_vent > 0), key="icu_vent_spec")
-        icu_ecmo_spec = xs2.checkbox("ECMO capable",   bool(day_ecmo > 0), key="icu_ecmo_spec")
+        icu_vent_spec = xs1.checkbox("Vent specialist", False, key="icu_vent_spec")
+        icu_ecmo_spec = xs2.checkbox("ECMO capable",   False, key="icu_ecmo_spec")
         icu_crrt_spec = xs3.checkbox("CRRT capable",   False,              key="icu_crrt_spec")
         icu_notes = st.text_area("Clinical notes", key="icu_notes", height=56,
             placeholder="e.g. post-cardiac surgery surge, 2 ECMO patients expected")
